@@ -33,13 +33,13 @@ export default async function StudentDashboard() {
 
   return (
     <div>
-        <h1 className="text-3xl font-bold text-brand-blue mb-2">Hello, {profile?.full_name || 'Student'}!</h1>
-        <p className="text-slate-600 mb-8">Here's what's on your learning agenda today. Let's get started!</p>
+        <h1 className="text-3xl font-bold text-brand-blue mb-2">Hello, {profile?.full_name || &apos;Student&apos;}!</h1>
+        <p className="text-slate-600 mb-8">Here&apos;s what&apos;s on your learning agenda today. Let&apos;s get started!</p>
         
         {/* --- DEV-ONLY SIMULATION BUTTON --- */}
         <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 my-4" role="alert">
             <p className="font-bold">Developer Tool</p>
-            <p>Simulate passing a quiz to test the 'Quiz Champion' achievement.</p>
+            <p>Simulate passing a quiz to test the &apos;Quiz Champion&apos; achievement.</p>
             <form action={submitFakeQuiz} className="mt-2">
                 <Button type="submit" variant="outline" size="sm">Submit Fake Quiz (Score &gt;80%)</Button>
             </form>

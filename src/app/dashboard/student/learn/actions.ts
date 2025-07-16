@@ -2,7 +2,6 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server"; // Import Supabase server client
-import { z } from 'zod';
 import Groq from 'groq-sdk';
 import { revalidatePath } from 'next/cache';
 import { subjectsData } from '@/lib/placeholder-data';
@@ -56,7 +55,7 @@ export async function generateStudentLesson(topicId: string) {
         if (matchError) throw new Error(`Failed to match chunks: ${matchError.message}`);
 
         if (chunks && chunks.length > 0) {
-            contextText = chunks.map((chunk: any) => chunk.content).join("\n\n---\n\n");
+            contextText = chunks.map((chunk: { content: string }) => chunk.content).join("\n\n---\n\n");
         }
     }
 
