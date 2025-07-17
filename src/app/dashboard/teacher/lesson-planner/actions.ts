@@ -87,12 +87,18 @@ export async function generateLessonPlan(prevState: any, formData: FormData) {
     // Save to teacher_content table
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
+        // Generate embedding for the lesson plan content
+        const fullContentForEmbedding = `Title: ${inputs.topic}. Content: ${JSON.stringify(planData)}`;
+        const { data: embeddingResponse } = await supabase.functions.invoke('text-to-embedding', { body: { text: fullContentForEmbedding } });
+        
+        // Now include the embedding in the insert
         await supabase.from('teacher_content').insert({
             owner_id: user.id,
             content_type: 'lesson_plan',
             title: `${inputs.subject}: ${inputs.topic}`,
             subject: inputs.subject,
-            structured_content: { inputs, aiContent: planData } // Save the entire payload
+            structured_content: { inputs, aiContent: planData }, // Save the entire payload
+            embedding: embeddingResponse.embedding // SAVE THE EMBEDDING
         });
     }
     

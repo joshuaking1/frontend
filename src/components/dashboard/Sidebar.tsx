@@ -34,9 +34,9 @@ const navLinks = [
     label: "Advanced Tools",
   },
   {
-    href: "/dashboard/teacher/resources",
+    href: "/dashboard/teacher/editor",
     icon: BookOpen,
-    label: "My Content Hub",
+    label: "Content Editor",
   },
   {
     href: "/dashboard/teacher/co-teacher",

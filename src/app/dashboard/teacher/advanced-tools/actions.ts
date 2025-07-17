@@ -73,12 +73,18 @@ export async function generateRubric(prevState: any, formData: FormData) {
     // Save to teacher_content table
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
+        // Generate embedding for the rubric content
+        const fullContentForEmbedding = `Title: ${rubricData.title || `Rubric for ${topic}`}. Content: ${JSON.stringify(rubricData)}`;
+        const { data: embeddingResponse } = await supabase.functions.invoke('text-to-embedding', { body: { text: fullContentForEmbedding } });
+        
+        // Now include the embedding in the insert
         await supabase.from('teacher_content').insert({
             owner_id: user.id,
             content_type: 'rubric',
             title: rubricData.title || `Rubric for ${topic}`,
             subject: topic,
-            structured_content: rubricData
+            structured_content: rubricData,
+            embedding: embeddingResponse.embedding // SAVE THE EMBEDDING
         });
     }
     
@@ -167,12 +173,18 @@ export async function generateTos(prevState: any, formData: FormData) {
     // Save to teacher_content table
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
+        // Generate embedding for the TOS content
+        const fullContentForEmbedding = `Title: ${tosData.title || examTitle}. Content: ${JSON.stringify(tosData)}`;
+        const { data: embeddingResponse } = await supabase.functions.invoke('text-to-embedding', { body: { text: fullContentForEmbedding } });
+        
+        // Now include the embedding in the insert
         await supabase.from('teacher_content').insert({
             owner_id: user.id,
             content_type: 'tos',
             title: tosData.title || examTitle,
             subject: subject,
-            structured_content: tosData
+            structured_content: tosData,
+            embedding: embeddingResponse.embedding // SAVE THE EMBEDDING
         });
     }
     
