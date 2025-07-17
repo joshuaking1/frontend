@@ -36,7 +36,7 @@ const navLinks = [
   {
     href: "/dashboard/teacher/resources",
     icon: BookOpen,
-    label: "My Resources",
+    label: "My Content Hub",
   },
   {
     href: "/dashboard/teacher/co-teacher",
