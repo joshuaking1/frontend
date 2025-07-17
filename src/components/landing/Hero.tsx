@@ -1,7 +1,10 @@
 // src/components/landing/Hero.tsx
+"use client";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle } from "lucide-react";
 import Link from 'next/link';
+import Lottie from "lottie-react";
+import animationData from "../../../public/animation.json";
 
 export const Hero = () => {
   return (
@@ -48,13 +51,13 @@ export const Hero = () => {
           </div>
         </div>
 
-        {/* Right Side: Visual (App Mockup) */}
-        <div className="p-4 bg-slate-100 rounded-2xl shadow-lg">
-          {/* Placeholder for a beautiful app mockup image or Lottie animation */}
-          {/* Recommendation: Create a graphic showing the app on a laptop and phone */}
-          <div className="aspect-video bg-slate-300 rounded-lg flex items-center justify-center">
-            <p className="font-serif text-slate-500">App Mockup Visual Here</p>
-          </div>
+        {/* Right Side: Visual (Lottie Animation) */}
+        <div className="flex items-center justify-center">
+            <Lottie
+                animationData={animationData}
+                className="w-full max-w-lg"
+                loop={true}
+            />
         </div>
       </div>
     </section>

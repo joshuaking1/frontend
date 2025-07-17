@@ -182,3 +182,62 @@ export async function generateTos(prevState: any, formData: FormData) {
     return { error: "Failed to generate Table of Specification from AI." };
   }
 }
+
+// --- AI REFINEMENT ACTION ---
+const refineSchema = z.object({
+  contentId: z.string().uuid(),
+  refinementPrompt: z.string().min(5, "Please provide instructions for the AI."),
+});
+
+// A generic refinement system prompt
+const refinementSystemPrompt = `
+You are an expert curriculum editor. Your task is to take an existing piece of educational content (in JSON format) and refine it based on a teacher's specific request.
+You MUST maintain the original JSON structure perfectly. Only modify the content within the JSON based on the user's prompt.
+You MUST ONLY respond with the complete, updated, valid, raw JSON object and nothing else.
+`;
+
+export async function refineContentWithAI(content: any, refinementPrompt: string) {
+    if (!content || !content.content_type) return { error: "Invalid content provided." };
+    if (!refinementPrompt) return { error: "Refinement prompt is required." };
+    
+    // Initialize Supabase client
+    const supabase = await createClient();
+    
+    // The user prompt will include the original content and the new instructions
+    const userPrompt = `
+        Here is the original JSON content:
+        \`\`\`json
+        ${JSON.stringify(content.structured_content, null, 2)}
+        \`\`\`
+
+        Now, please apply the following refinement to it: "${refinementPrompt}"
+
+        Return the complete, new JSON object.
+    `;
+
+    try {
+        const response = await groq.chat.completions.create({
+            model: 'mistral-saba-24b',
+            messages: [{ role: 'system', content: refinementSystemPrompt }, { role: 'user', content: userPrompt }],
+            response_format: { type: "json_object" },
+        });
+
+        const refinedJson = JSON.parse(response.choices[0].message.content);
+
+        // Update the record in the database with the new, refined content
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            await supabase
+                .from('teacher_content')
+                .update({ structured_content: refinedJson, updated_at: new Date().toISOString() })
+                .eq('id', content.id);
+        }
+
+        revalidatePath('/dashboard/teacher/resources');
+        return { refinedContent: refinedJson };
+
+    } catch (e) {
+        console.error("AI Refinement Error:", e);
+        return { error: "Failed to refine content with AI." };
+    }
+}
