@@ -1,6 +1,7 @@
 // frontend/src/app/dashboard/teacher/advanced-tools/actions.ts
 "use server";
 import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import Groq from 'groq-sdk';
 
@@ -68,6 +69,19 @@ export async function generateRubric(prevState: any, formData: FormData) {
       response_format: { type: "json_object" },
     });
     const rubricData = JSON.parse(response.choices[0].message.content);
+    
+    // Save to teacher_content table
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+        await supabase.from('teacher_content').insert({
+            owner_id: user.id,
+            content_type: 'rubric',
+            title: rubricData.title || `Rubric for ${topic}`,
+            subject: topic,
+            structured_content: rubricData
+        });
+    }
+    
     return { rubric: rubricData };
   } catch (e) {
     console.error("Rubric Generation Error:", e);
@@ -149,6 +163,19 @@ export async function generateTos(prevState: any, formData: FormData) {
       response_format: { type: "json_object" },
     });
     const tosData = JSON.parse(response.choices[0].message.content);
+    
+    // Save to teacher_content table
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+        await supabase.from('teacher_content').insert({
+            owner_id: user.id,
+            content_type: 'tos',
+            title: tosData.title || examTitle,
+            subject: subject,
+            structured_content: tosData
+        });
+    }
+    
     return { tos: tosData };
   } catch (e) {
     console.error("TOS Generation Error:", e);

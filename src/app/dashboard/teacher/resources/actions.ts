@@ -39,15 +39,20 @@ export async function uploadResource(formData: FormData) {
     return { error: "Failed to upload file." };
   }
 
-  // 2. Insert metadata into the database
+  // 2. Insert metadata into the NEW teacher_content table
   const { error: dbError } = await supabase
-    .from('resources')
+    .from('teacher_content')
     .insert({
-      uploader_id: user.id,
-      title,
-      subject,
+      owner_id: user.id,
+      content_type: 'uploaded_resource',
+      title: title,
+      subject: subject,
       file_path: filePath,
-      file_type: file.type,
+      structured_content: {
+        original_filename: file.name,
+        file_size: file.size,
+        mime_type: file.type,
+      }
     });
 
   if (dbError) {
@@ -59,4 +64,53 @@ export async function uploadResource(formData: FormData) {
 
   revalidatePath('/dashboard/teacher/resources');
   return { success: true };
+}
+
+export async function deleteResource(resourceId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    return { error: "You must be logged in." };
+  }
+
+  try {
+    // Get the resource to check ownership and get file path
+    const { data: resource, error: fetchError } = await supabase
+      .from('teacher_content')
+      .select('*')
+      .eq('id', resourceId)
+      .eq('owner_id', user.id)
+      .eq('content_type', 'uploaded_resource')
+      .single();
+
+    if (fetchError || !resource) {
+      return { error: "Resource not found or access denied." };
+    }
+
+    // Delete from storage if file_path exists
+    if (resource.file_path) {
+      await supabase.storage
+        .from('teacher_resources')
+        .remove([resource.file_path]);
+    }
+
+    // Delete from database
+    const { error: deleteError } = await supabase
+      .from('teacher_content')
+      .delete()
+      .eq('id', resourceId)
+      .eq('owner_id', user.id);
+
+    if (deleteError) {
+      return { error: "Failed to delete resource." };
+    }
+
+    revalidatePath('/dashboard/teacher/resources');
+    return { success: true };
+
+  } catch (error) {
+    console.error("Delete resource error:", error);
+    return { error: "An unexpected error occurred." };
+  }
 }

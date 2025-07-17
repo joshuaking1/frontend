@@ -84,6 +84,18 @@ export async function generateLessonPlan(prevState: any, formData: FormData) {
     const jsonContent = response.choices[0].message.content;
     const planData = JSON.parse(jsonContent);
     
+    // Save to teacher_content table
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+        await supabase.from('teacher_content').insert({
+            owner_id: user.id,
+            content_type: 'lesson_plan',
+            title: `${inputs.subject}: ${inputs.topic}`,
+            subject: inputs.subject,
+            structured_content: { inputs, aiContent: planData } // Save the entire payload
+        });
+    }
+    
     return { planData: { inputs, aiContent: planData }, error: null };
 
   } catch (e) {
