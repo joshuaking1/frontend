@@ -1,11 +1,6 @@
 // src/components/dashboard/AchievementCard.tsx
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { AnimatedCard } from "@/components/ui/animated-card";
+import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { type LucideIcon, Lock, Unlock } from "lucide-react";
 
 type AchievementCardProps = {
@@ -13,6 +8,7 @@ type AchievementCardProps = {
   title: string;
   description: string;
   unlocked: boolean;
+  delay?: number;
 };
 
 export const AchievementCard = ({
@@ -20,9 +16,11 @@ export const AchievementCard = ({
   title,
   description,
   unlocked,
+  delay = 0,
 }: AchievementCardProps) => {
   return (
-    <Card
+    <AnimatedCard
+      delay={delay}
       className={`transition-all duration-300 ${
         unlocked ? "bg-white shadow-md" : "bg-slate-100"
       }`}
@@ -63,6 +61,6 @@ export const AchievementCard = ({
           {description}
         </CardDescription>
       </CardContent>
-    </Card>
+    </AnimatedCard>
   );
 };

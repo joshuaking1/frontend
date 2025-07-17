@@ -4,12 +4,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from "@/components/ui/card";
+import { AnimatedCard } from "@/components/ui/animated-card";
+import { CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -56,7 +52,7 @@ export const PostCard = ({ post }: { post: PostType }) => {
   };
 
   return (
-    <Card className="bg-white shadow-sm">
+    <AnimatedCard className="bg-white shadow-sm">
       <CardHeader>
         <div className="flex items-center space-x-3">
           <Link href={`/dashboard/profile/${post.author_id}`}>
@@ -117,6 +113,6 @@ export const PostCard = ({ post }: { post: PostType }) => {
           </Dialog>
         </div>
       </CardFooter>
-    </Card>
+    </AnimatedCard>
   );
 };

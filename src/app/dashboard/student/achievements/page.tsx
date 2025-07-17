@@ -64,13 +64,14 @@ export default async function AchievementsPage() {
 
       {/* Achievements Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {achievementsData.map((achievement) => (
+        {achievementsData.map((achievement, index) => (
           <AchievementCard
             key={achievement.title}
             icon={achievement.icon}
             title={achievement.title}
             description={achievement.description}
             unlocked={achievement.unlocked}
+            delay={index * 0.05}
           />
         ))}
       </div>

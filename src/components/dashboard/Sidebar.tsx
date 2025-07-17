@@ -12,6 +12,7 @@ import {
   Settings,
   LogOut,
   Users,
+  Wrench,
 } from "lucide-react";
 import { signOut } from "@/app/auth/actions"; // Import the server action
 
@@ -26,6 +27,11 @@ const navLinks = [
     href: "/dashboard/teacher/assessments",
     icon: FileText,
     label: "Assessments",
+  },
+  {
+    href: "/dashboard/teacher/advanced-tools",
+    icon: Wrench,
+    label: "Advanced Tools",
   },
   {
     href: "/dashboard/teacher/resources",
