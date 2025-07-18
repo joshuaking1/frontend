@@ -28,6 +28,7 @@ export default async function StudentDashboardLayout({
       <StudentSidebar
         userName={profile?.full_name || "Student"}
         avatarUrl={profile?.avatar_url || undefined}
+        userId={user.id}
       />
       <main className="flex-1 ml-72 p-8 min-h-screen">{children}</main>
     </div>
