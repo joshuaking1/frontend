@@ -64,7 +64,7 @@ export async function generateRubric(prevState: any, formData: FormData) {
 
   try {
     const response = await groq.chat.completions.create({
-      model: 'mistral-saba-24b',
+      model: 'openai/gpt-oss-20b',
       messages: [{ role: 'system', content: rubricSystemPrompt }, { role: 'user', content: userPrompt }],
       response_format: { type: "json_object" },
     });
@@ -164,7 +164,7 @@ export async function generateTos(prevState: any, formData: FormData) {
 
   try {
     const response = await groq.chat.completions.create({
-      model: 'mistral-saba-24b',
+      model: 'openai/gpt-oss-20b',
       messages: [{ role: 'system', content: tosSystemPrompt }, { role: 'user', content: userPrompt }],
       response_format: { type: "json_object" },
     });
@@ -229,7 +229,7 @@ export async function refineContentWithAI(content: any, refinementPrompt: string
 
     try {
         const response = await groq.chat.completions.create({
-            model: 'mistral-saba-24b',
+            model: 'openai/gpt-oss-20b',
             messages: [{ role: 'system', content: refinementSystemPrompt }, { role: 'user', content: userPrompt }],
             response_format: { type: "json_object" },
         });

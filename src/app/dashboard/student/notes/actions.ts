@@ -97,7 +97,7 @@ export async function generateFlashcardsForNote(noteId: string, noteContent: str
     
     try {
         const response = await groq.chat.completions.create({
-            model: 'mistral-saba-24b',
+            model: 'openai/gpt-oss-20b',
             messages: [{ role: 'system', content: flashcardSystemPrompt }, { role: 'user', content: userPrompt }],
             temperature: 0.5,
             response_format: { type: "json_object" },

@@ -70,7 +70,7 @@ export async function generateStudentLesson(topicId: string) {
     `;
 
     const response = await groq.chat.completions.create({
-      model: 'mistral-saba-24b',
+      model: 'openai/gpt-oss-20b',
       messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
     });
 

@@ -81,7 +81,7 @@ export async function generateAssessment(prevState: any, formData: FormData) {
     `;
 
     const response = await groq.chat.completions.create({
-      model: 'mistral-saba-24b',
+      model: 'openai/gpt-oss-20b',
       messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
       response_format: { type: "json_object" },
     });

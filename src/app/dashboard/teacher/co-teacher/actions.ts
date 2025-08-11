@@ -86,7 +86,7 @@ export async function getChatResponse(persona: string, history: Message[]) {
 
     try {
         const response = await groq.chat.completions.create({
-            model: 'mistral-saba-24b',
+            model: 'openai/gpt-oss-20b',
             messages: messages,
         });
         return { response: response.choices[0].message.content };
