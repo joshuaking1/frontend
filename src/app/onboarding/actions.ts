@@ -42,7 +42,10 @@ export async function updateTeacherProfile(formData: FormData) {
   if (!validation.success) {
     // In a real app, you'd return these errors to the form.
     // For now, we'll throw an error.
-    throw new Error(validation.error.flatten().fieldErrors.toString());
+    const errorMessages = Object.entries(validation.error.flatten().fieldErrors)
+      .map(([field, errors]) => `${field}: ${errors?.join(', ')}`)
+      .join('; ');
+    throw new Error(`Validation failed: ${errorMessages}`);
   }
   
   const { fullName, gender, region, district, schoolName, yearsOfExperience, positionRank, subjects } = validation.data;
@@ -123,8 +126,10 @@ export async function updateStudentProfile(formData: FormData) {
   const validation = studentOnboardingSchema.safeParse(rawFormData);
   
   if (!validation.success) {
-    const errorMessages = Object.values(validation.error.flatten().fieldErrors).join(', ');
-    throw new Error(`Invalid form data: ${errorMessages}`);
+    const errorMessages = Object.entries(validation.error.flatten().fieldErrors)
+      .map(([field, errors]) => `${field}: ${errors?.join(', ')}`)
+      .join('; ');
+    throw new Error(`Validation failed: ${errorMessages}`);
   }
 
   const { fullName, dateOfBirth, gender, region, schoolName, currentClass } = validation.data;
