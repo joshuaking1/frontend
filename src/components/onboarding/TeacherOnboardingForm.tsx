@@ -218,15 +218,17 @@ export const TeacherOnboardingForm = ({ userEmail }: { userEmail: string }) => {
           <p className="text-sm text-slate-500 mb-3">
             Select at least one subject. Don't see your subject? Add it below.
           </p>
-          
+
           {/* Predefined subjects */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-2 p-4 border rounded-md">
             {subjects.map((subject) => (
               <div key={subject} className="flex items-center space-x-2">
-                <Checkbox 
-                  id={subject} 
+                <Checkbox
+                  id={subject}
                   checked={selectedSubjects.includes(subject)}
-                  onCheckedChange={(checked) => handleSubjectChange(subject, checked as boolean)}
+                  onCheckedChange={(checked) =>
+                    handleSubjectChange(subject, checked as boolean)
+                  }
                 />
                 <Label htmlFor={subject} className="font-normal">
                   {subject}
@@ -243,7 +245,10 @@ export const TeacherOnboardingForm = ({ userEmail }: { userEmail: string }) => {
               </Label>
               <div className="flex flex-wrap gap-2">
                 {customSubjects.map((subject) => (
-                  <div key={subject} className="flex items-center bg-brand-blue text-white px-3 py-1 rounded-full text-sm">
+                  <div
+                    key={subject}
+                    className="flex items-center bg-brand-blue text-white px-3 py-1 rounded-full text-sm"
+                  >
                     <span>{subject}</span>
                     <button
                       type="button"
@@ -271,7 +276,22 @@ export const TeacherOnboardingForm = ({ userEmail }: { userEmail: string }) => {
               type="button"
               onClick={addCustomSubject}
               variant="outline"
-              size=
+              size="sm"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Hidden inputs for form submission */}
+          {selectedSubjects.map((subject) => (
+            <input
+              key={subject}
+              type="hidden"
+              name="subjects"
+              value={subject}
+            />
+          ))}
+        </div>
 
         <Button
           type="submit"
