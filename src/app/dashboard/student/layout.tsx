@@ -24,13 +24,15 @@ export default async function StudentDashboardLayout({
     .single();
 
   return (
-    <div className="flex bg-slate-50">
+    <div className="flex h-screen bg-slate-50">
       <StudentSidebar
         userName={profile?.full_name || "Student"}
         avatarUrl={profile?.avatar_url || undefined}
         userId={user.id}
       />
-      <main className="flex-1 ml-72 p-8 min-h-screen">{children}</main>
+      <main className="flex-1 lg:ml-72 overflow-auto">
+        <div className="p-4 sm:p-6 lg:p-8">{children}</div>
+      </main>
     </div>
   );
 }

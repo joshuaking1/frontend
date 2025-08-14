@@ -37,7 +37,7 @@ export const LessonPlanDisplay = ({ planData }: LessonPlanDisplayProps) => {
   const { inputs, aiContent } = planData;
 
   const renderList = (items: string[]) => (
-    <ul className="list-disc pl-5 space-y-1">
+    <ul className="list-disc pl-4 sm:pl-5 space-y-1 text-sm sm:text-base">
       {items.map((item, index) => (
         <li key={index}>{item}</li>
       ))}
@@ -45,7 +45,7 @@ export const LessonPlanDisplay = ({ planData }: LessonPlanDisplayProps) => {
   );
 
   const renderOrderedList = (items: string[]) => (
-    <ol className="list-decimal pl-5 space-y-1">
+    <ol className="list-decimal pl-4 sm:pl-5 space-y-1 text-sm sm:text-base">
       {items.map((item, index) => (
         <li key={index}>{item}</li>
       ))}
@@ -53,141 +53,265 @@ export const LessonPlanDisplay = ({ planData }: LessonPlanDisplayProps) => {
   );
 
   return (
-    <div className="bg-white p-4 shadow-lg rounded-lg border">
-      <h2 className="text-center font-bold text-xl mb-4">Learning Plan</h2>
-      <table className="w-full border-collapse border">
-        <tbody>
-          <tr className="bg-slate-50">
-            <td className="border p-2 font-semibold">Subject</td>
-            <td className="border p-2" colSpan={3}>
-              {inputs.subject}
-            </td>
-            <td className="border p-2 font-semibold">Week</td>
-            <td className="border p-2">{inputs.week}</td>
-            <td className="border p-2 font-semibold">Duration</td>
-            <td className="border p-2">{inputs.duration}</td>
-            <td className="border p-2 font-semibold">Form</td>
-            <td className="border p-2">{inputs.grade}</td>
-          </tr>
-          <tr>
-            <td className="border p-2 font-semibold">Strand</td>
-            <td className="border p-2" colSpan={3}>
-              {inputs.strand}
-            </td>
-            <td className="border p-2 font-semibold">Sub-Strand</td>
-            <td className="border p-2" colSpan={5}>
-              {inputs.subStrand}
-            </td>
-          </tr>
-          <tr>
-            <td className="border p-2 font-semibold">Content Standard</td>
-            <td className="border p-2" colSpan={9}>
-              {aiContent.contentStandard || inputs.topic}
-            </td>
-          </tr>
-          <tr>
-            <td className="border p-2 font-semibold">Learning Outcome(s)</td>
-            <td className="border p-2" colSpan={9}>
-              {aiContent.learningOutcome}
-            </td>
-          </tr>
-          <tr>
-            <td className="border p-2 font-semibold">Learning Indicator(s)</td>
-            <td className="border p-2" colSpan={9}>
-              {aiContent.learningIndicator}
-            </td>
-          </tr>
-          <tr>
-            <td className="border p-2 font-semibold">Essential Question(s)</td>
-            <td className="border p-2" colSpan={9}>
-              {renderOrderedList(aiContent.essentialQuestions)}
-            </td>
-          </tr>
-          <tr>
-            <td className="border p-2 font-semibold">Pedagogical Strategies</td>
-            <td className="border p-2" colSpan={9}>
-              {aiContent.pedagogicalStrategies.join(", ")}
-            </td>
-          </tr>
-          <tr>
-            <td className="border p-2 font-semibold" rowSpan={2}>
-              Teaching & Learning Resources
-            </td>
-            <td className="border p-2" colSpan={9}>
+    <div className="bg-white shadow-lg rounded-lg border overflow-hidden">
+      <div className="p-4 sm:p-6">
+        <h2 className="text-center font-bold text-lg sm:text-xl lg:text-2xl mb-4 sm:mb-6 text-brand-blue">
+          Learning Plan
+        </h2>
+
+        {/* Mobile-First Card Layout */}
+        <div className="space-y-4 sm:space-y-6">
+          {/* Basic Information Section */}
+          <div className="bg-slate-50 rounded-lg p-3 sm:p-4">
+            <h3 className="font-semibold text-brand-blue mb-3 text-sm sm:text-base">
+              Basic Information
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+              <div>
+                <span className="text-xs sm:text-sm font-medium text-slate-600">
+                  Subject:
+                </span>
+                <p className="text-sm sm:text-base font-medium">
+                  {inputs.subject}
+                </p>
+              </div>
+              <div>
+                <span className="text-xs sm:text-sm font-medium text-slate-600">
+                  Form:
+                </span>
+                <p className="text-sm sm:text-base font-medium">
+                  {inputs.grade}
+                </p>
+              </div>
+              <div>
+                <span className="text-xs sm:text-sm font-medium text-slate-600">
+                  Week:
+                </span>
+                <p className="text-sm sm:text-base font-medium">
+                  {inputs.week}
+                </p>
+              </div>
+              <div>
+                <span className="text-xs sm:text-sm font-medium text-slate-600">
+                  Duration:
+                </span>
+                <p className="text-sm sm:text-base font-medium">
+                  {inputs.duration} mins
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Curriculum Structure */}
+          <div className="border rounded-lg p-3 sm:p-4">
+            <h3 className="font-semibold text-brand-blue mb-3 text-sm sm:text-base">
+              Curriculum Structure
+            </h3>
+            <div className="space-y-2 sm:space-y-3">
+              <div>
+                <span className="text-xs sm:text-sm font-medium text-slate-600">
+                  Strand:
+                </span>
+                <p className="text-sm sm:text-base">{inputs.strand}</p>
+              </div>
+              <div>
+                <span className="text-xs sm:text-sm font-medium text-slate-600">
+                  Sub-Strand:
+                </span>
+                <p className="text-sm sm:text-base">{inputs.subStrand}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Learning Objectives */}
+          <div className="border rounded-lg p-3 sm:p-4">
+            <h3 className="font-semibold text-brand-blue mb-3 text-sm sm:text-base">
+              Learning Objectives
+            </h3>
+            <div className="space-y-3 sm:space-y-4">
+              <div>
+                <span className="text-xs sm:text-sm font-medium text-slate-600 block mb-1">
+                  Content Standard:
+                </span>
+                <p className="text-sm sm:text-base leading-relaxed">
+                  {aiContent.contentStandard || inputs.topic}
+                </p>
+              </div>
+              <div>
+                <span className="text-xs sm:text-sm font-medium text-slate-600 block mb-1">
+                  Learning Outcome(s):
+                </span>
+                <p className="text-sm sm:text-base leading-relaxed">
+                  {aiContent.learningOutcome}
+                </p>
+              </div>
+              <div>
+                <span className="text-xs sm:text-sm font-medium text-slate-600 block mb-1">
+                  Learning Indicator(s):
+                </span>
+                <p className="text-sm sm:text-base leading-relaxed">
+                  {aiContent.learningIndicator}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Essential Questions */}
+          <div className="border rounded-lg p-3 sm:p-4">
+            <h3 className="font-semibold text-brand-blue mb-3 text-sm sm:text-base">
+              Essential Questions
+            </h3>
+            {renderOrderedList(aiContent.essentialQuestions)}
+          </div>
+
+          {/* Teaching Strategies & Resources */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="border rounded-lg p-3 sm:p-4">
+              <h3 className="font-semibold text-brand-blue mb-3 text-sm sm:text-base">
+                Pedagogical Strategies
+              </h3>
+              <p className="text-sm sm:text-base leading-relaxed">
+                {aiContent.pedagogicalStrategies.join(", ")}
+              </p>
+            </div>
+            <div className="border rounded-lg p-3 sm:p-4">
+              <h3 className="font-semibold text-brand-blue mb-3 text-sm sm:text-base">
+                Teaching & Learning Resources
+              </h3>
               {renderList(aiContent.teachingAndLearningResources)}
-            </td>
-          </tr>
-          <tr></tr>
-          <tr className="bg-slate-50">
-            <td className="border p-2 font-bold text-center" colSpan={10}>
+            </div>
+          </div>
+
+          {/* Differentiation Notes */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
+            <h3 className="font-semibold text-blue-800 mb-3 text-sm sm:text-base">
               Key Notes on Differentiation
-            </td>
-          </tr>
-          <tr>
-            <td className="border p-2" colSpan={10}>
-              {renderList(aiContent.differentiationNotes)}
-            </td>
-          </tr>
-          <tr className="bg-slate-50">
-            <td className="border p-2 font-bold text-center" colSpan={5}>
-              Teacher Activity
-            </td>
-            <td className="border p-2 font-bold text-center" colSpan={5}>
-              Learner Activity
-            </td>
-          </tr>
-          <tr>
-            <td className="border p-2" colSpan={5}>
-              <div className="font-semibold">Starter Activity (10 minutes)</div>
-              {aiContent.starterActivity.teacher}
-            </td>
-            <td className="border p-2" colSpan={5}>
-              <div className="font-semibold">Starter Activity (10 minutes)</div>
-              {aiContent.starterActivity.learner}
-            </td>
-          </tr>
-          <tr>
-            <td className="border p-2" colSpan={5}>
-              <div className="font-semibold">
-                Introductory Activity (15 minutes)
+            </h3>
+            {renderList(aiContent.differentiationNotes)}
+          </div>
+
+          {/* Lesson Activities */}
+          <div className="border rounded-lg overflow-hidden">
+            <div className="bg-brand-blue text-white p-3 sm:p-4">
+              <h3 className="font-semibold text-center text-sm sm:text-base">
+                Lesson Activities
+              </h3>
+            </div>
+
+            <div className="divide-y">
+              {/* Starter Activity */}
+              <div className="p-3 sm:p-4">
+                <h4 className="font-semibold text-brand-orange mb-3 text-sm sm:text-base">
+                  Starter Activity (10 minutes)
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                  <div>
+                    <span className="text-xs sm:text-sm font-medium text-slate-600 block mb-1">
+                      Teacher Activity:
+                    </span>
+                    <p className="text-sm sm:text-base leading-relaxed bg-slate-50 p-2 sm:p-3 rounded">
+                      {aiContent.starterActivity.teacher}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-xs sm:text-sm font-medium text-slate-600 block mb-1">
+                      Learner Activity:
+                    </span>
+                    <p className="text-sm sm:text-base leading-relaxed bg-blue-50 p-2 sm:p-3 rounded">
+                      {aiContent.starterActivity.learner}
+                    </p>
+                  </div>
+                </div>
               </div>
-              {aiContent.introductoryActivity.teacher}
-            </td>
-            <td className="border p-2" colSpan={5}>
-              <div className="font-semibold">
-                Introductory Activity (15 minutes)
+
+              {/* Introductory Activity */}
+              <div className="p-3 sm:p-4">
+                <h4 className="font-semibold text-brand-orange mb-3 text-sm sm:text-base">
+                  Introductory Activity (15 minutes)
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                  <div>
+                    <span className="text-xs sm:text-sm font-medium text-slate-600 block mb-1">
+                      Teacher Activity:
+                    </span>
+                    <p className="text-sm sm:text-base leading-relaxed bg-slate-50 p-2 sm:p-3 rounded">
+                      {aiContent.introductoryActivity.teacher}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-xs sm:text-sm font-medium text-slate-600 block mb-1">
+                      Learner Activity:
+                    </span>
+                    <p className="text-sm sm:text-base leading-relaxed bg-blue-50 p-2 sm:p-3 rounded">
+                      {aiContent.introductoryActivity.learner}
+                    </p>
+                  </div>
+                </div>
               </div>
-              {aiContent.introductoryActivity.learner}
-            </td>
-          </tr>
-          <tr>
-            <td className="border p-2" colSpan={5}>
-              <div className="font-semibold">Main Activity 1 (40 minutes)</div>
-              {aiContent.mainActivity1.teacher}
-            </td>
-            <td className="border p-2" colSpan={5}>
-              <div className="font-semibold">Main Activity 1 (40 minutes)</div>
-              {aiContent.mainActivity1.learner}
-            </td>
-          </tr>
-          <tr>
-            <td className="border p-2" colSpan={5}>
-              <div className="font-semibold">Main Activity 2 (40 minutes)</div>
-              {aiContent.mainActivity2.teacher}
-            </td>
-            <td className="border p-2" colSpan={5}>
-              <div className="font-semibold">Main Activity 2 (40 minutes)</div>
-              {aiContent.mainActivity2.learner}
-            </td>
-          </tr>
-          <tr>
-            <td className="border p-2" colSpan={10}>
-              <div className="font-semibold">Lesson Closure (15 minutes)</div>
-              {aiContent.lessonClosure.teacher}
-            </td>
-          </tr>
-        </tbody>
-      </table>
+
+              {/* Main Activity 1 */}
+              <div className="p-3 sm:p-4">
+                <h4 className="font-semibold text-brand-orange mb-3 text-sm sm:text-base">
+                  Main Activity 1 (40 minutes)
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                  <div>
+                    <span className="text-xs sm:text-sm font-medium text-slate-600 block mb-1">
+                      Teacher Activity:
+                    </span>
+                    <p className="text-sm sm:text-base leading-relaxed bg-slate-50 p-2 sm:p-3 rounded">
+                      {aiContent.mainActivity1.teacher}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-xs sm:text-sm font-medium text-slate-600 block mb-1">
+                      Learner Activity:
+                    </span>
+                    <p className="text-sm sm:text-base leading-relaxed bg-blue-50 p-2 sm:p-3 rounded">
+                      {aiContent.mainActivity1.learner}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Main Activity 2 */}
+              <div className="p-3 sm:p-4">
+                <h4 className="font-semibold text-brand-orange mb-3 text-sm sm:text-base">
+                  Main Activity 2 (40 minutes)
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                  <div>
+                    <span className="text-xs sm:text-sm font-medium text-slate-600 block mb-1">
+                      Teacher Activity:
+                    </span>
+                    <p className="text-sm sm:text-base leading-relaxed bg-slate-50 p-2 sm:p-3 rounded">
+                      {aiContent.mainActivity2.teacher}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-xs sm:text-sm font-medium text-slate-600 block mb-1">
+                      Learner Activity:
+                    </span>
+                    <p className="text-sm sm:text-base leading-relaxed bg-blue-50 p-2 sm:p-3 rounded">
+                      {aiContent.mainActivity2.learner}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Lesson Closure */}
+              <div className="p-3 sm:p-4 bg-green-50">
+                <h4 className="font-semibold text-green-800 mb-3 text-sm sm:text-base">
+                  Lesson Closure (15 minutes)
+                </h4>
+                <p className="text-sm sm:text-base leading-relaxed">
+                  {aiContent.lessonClosure.teacher}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

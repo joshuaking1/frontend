@@ -75,42 +75,74 @@ function QuizDisplay({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {quiz.questions.map((q, index) => (
-          <div key={index} className="p-4 border rounded-lg bg-slate-50">
-            <p className="font-semibold mb-2">
-              {index + 1}. {q.question}
-            </p>
-            {q.type === "mcq" && q.options && (
-              <ul className="space-y-2">
-                {q.options.map((option, i) => (
-                  <li
-                    key={i}
-                    className={`flex items-center space-x-2 text-sm p-2 rounded-md ${
-                      option === q.correctAnswer
-                        ? "bg-green-100 text-green-800 font-medium"
-                        : "text-slate-700"
-                    }`}
-                  >
-                    {option === q.correctAnswer ? (
-                      <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
-                    ) : (
-                      <XCircle className="h-4 w-4 text-slate-400 shrink-0" />
-                    )}
-                    <span>{option}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-            {q.type === "short_answer" && (
-              <div className="mt-2 p-2 bg-blue-100 rounded-md text-sm text-blue-800 italic">
-                <p>
-                  <strong className="font-semibold">Example Answer:</strong>{" "}
-                  {q.correctAnswer}
+        {quiz.questions.map((q, index) => {
+          const dokLevelInfo = {
+            "1": { label: "DoK 1: Recall", color: "bg-blue-100 text-blue-800" },
+            "2": {
+              label: "DoK 2: Skills",
+              color: "bg-green-100 text-green-800",
+            },
+            "3": {
+              label: "DoK 3: Strategic",
+              color: "bg-orange-100 text-orange-800",
+            },
+            "4": {
+              label: "DoK 4: Extended",
+              color: "bg-purple-100 text-purple-800",
+            },
+          };
+
+          const dokInfo = dokLevelInfo[q.dokLevel] || {
+            label: "DoK Level",
+            color: "bg-gray-100 text-gray-800",
+          };
+
+          return (
+            <div key={index} className="p-4 border rounded-lg bg-slate-50">
+              <div className="flex items-start justify-between mb-2">
+                <p className="font-semibold flex-1">
+                  {index + 1}. {q.question}
                 </p>
+                {q.dokLevel && (
+                  <span
+                    className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${dokInfo.color} flex-shrink-0`}
+                  >
+                    {dokInfo.label}
+                  </span>
+                )}
               </div>
-            )}
-          </div>
-        ))}
+              {q.type === "mcq" && q.options && (
+                <ul className="space-y-2">
+                  {q.options.map((option, i) => (
+                    <li
+                      key={i}
+                      className={`flex items-center space-x-2 text-sm p-2 rounded-md ${
+                        option === q.correctAnswer
+                          ? "bg-green-100 text-green-800 font-medium"
+                          : "text-slate-700"
+                      }`}
+                    >
+                      {option === q.correctAnswer ? (
+                        <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
+                      ) : (
+                        <XCircle className="h-4 w-4 text-slate-400 shrink-0" />
+                      )}
+                      <span>{option}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {q.type === "short_answer" && (
+                <div className="mt-2 p-2 bg-blue-100 rounded-md text-sm text-blue-800 italic">
+                  <p>
+                    <strong className="font-semibold">Example Answer:</strong>{" "}
+                    {q.correctAnswer}
+                  </p>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </CardContent>
     </Card>
   );
@@ -145,36 +177,112 @@ export const AIAssessmentGenerator = () => {
                 </p>
               )}
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="numQuestions">No. of Questions</Label>
-                <Input
-                  id="numQuestions"
-                  name="numQuestions"
-                  type="number"
-                  defaultValue="5"
-                  required
-                />
-                {state.error?.numQuestions && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {state.error.numQuestions[0]}
-                  </p>
-                )}
+            <div>
+              <Label htmlFor="numQuestions">No. of Questions</Label>
+              <Input
+                id="numQuestions"
+                name="numQuestions"
+                type="number"
+                defaultValue="5"
+                required
+              />
+              {state.error?.numQuestions && (
+                <p className="text-red-500 text-sm mt-1">
+                  {state.error.numQuestions[0]}
+                </p>
+              )}
+            </div>
+            <div>
+              <Label>
+                DoK Levels <span className="text-red-500">*</span>
+              </Label>
+              <p className="text-sm text-slate-600 mb-3">
+                Select one or more Depth of Knowledge levels for your assessment
+              </p>
+              <div className="space-y-3 p-3 border rounded-md bg-slate-50">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="dok1"
+                    name="dokLevels"
+                    value="1"
+                    className="rounded border-gray-300 text-brand-orange focus:ring-brand-orange"
+                  />
+                  <Label
+                    htmlFor="dok1"
+                    className="text-sm font-normal cursor-pointer"
+                  >
+                    <span className="font-semibold">Level 1:</span> Recall &
+                    Recognition
+                    <span className="block text-xs text-slate-500">
+                      Basic facts, definitions, simple procedures
+                    </span>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="dok2"
+                    name="dokLevels"
+                    value="2"
+                    defaultChecked
+                    className="rounded border-gray-300 text-brand-orange focus:ring-brand-orange"
+                  />
+                  <Label
+                    htmlFor="dok2"
+                    className="text-sm font-normal cursor-pointer"
+                  >
+                    <span className="font-semibold">Level 2:</span> Skills &
+                    Concepts
+                    <span className="block text-xs text-slate-500">
+                      Apply knowledge, make connections
+                    </span>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="dok3"
+                    name="dokLevels"
+                    value="3"
+                    className="rounded border-gray-300 text-brand-orange focus:ring-brand-orange"
+                  />
+                  <Label
+                    htmlFor="dok3"
+                    className="text-sm font-normal cursor-pointer"
+                  >
+                    <span className="font-semibold">Level 3:</span> Strategic
+                    Thinking
+                    <span className="block text-xs text-slate-500">
+                      Analyze, evaluate, create solutions
+                    </span>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="dok4"
+                    name="dokLevels"
+                    value="4"
+                    className="rounded border-gray-300 text-brand-orange focus:ring-brand-orange"
+                  />
+                  <Label
+                    htmlFor="dok4"
+                    className="text-sm font-normal cursor-pointer"
+                  >
+                    <span className="font-semibold">Level 4:</span> Extended
+                    Thinking
+                    <span className="block text-xs text-slate-500">
+                      Complex projects, research, investigations
+                    </span>
+                  </Label>
+                </div>
               </div>
-              <div>
-                <Label htmlFor="dokLevel">DoK Level</Label>
-                <Select name="dokLevel" defaultValue="2">
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">1 (Recall)</SelectItem>
-                    <SelectItem value="2">2 (Skill/Concept)</SelectItem>
-                    <SelectItem value="3">3 (Strategic Thinking)</SelectItem>
-                    <SelectItem value="4">4 (Extended Thinking)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {state.error?.dokLevels && (
+                <p className="text-red-500 text-sm mt-1">
+                  {state.error.dokLevels[0]}
+                </p>
+              )}
             </div>
             <div>
               <Label>Question Type</Label>

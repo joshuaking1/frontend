@@ -59,29 +59,33 @@ const teacherFeatures = [
 
 export const FeaturesForTeachers = () => {
   return (
-    <section id="for-teachers" className="py-20 md:py-24 bg-white">
+    <section
+      id="for-teachers"
+      className="py-12 sm:py-16 md:py-20 lg:py-24 bg-white px-4"
+    >
       <div className="container mx-auto">
         <div className="text-center">
-          <h2 className="font-serif text-4xl font-bold text-brand-blue">
+          <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-brand-blue">
             Your Ultimate Teaching Toolkit
           </h2>
-          <p className="mt-4 text-lg text-slate-600 max-w-3xl mx-auto">
+          <p className="mt-4 text-base sm:text-lg text-slate-600 max-w-3xl mx-auto px-4">
             Everything you need to reduce prep time, boost creativity, and
             deliver outstanding lessons.
           </p>
         </div>
-        <Tabs defaultValue="co-teacher" className="mt-12">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto">
+        <Tabs defaultValue="co-teacher" className="mt-8 sm:mt-12">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto gap-1 sm:gap-2">
             {teacherFeatures.map((feature) => (
               <TabsTrigger
                 key={feature.value}
                 value={feature.value}
-                className="py-3 px-2 flex-col h-auto"
+                className="py-2 sm:py-3 px-1 sm:px-2 flex-col h-auto text-xs sm:text-sm"
               >
-                <div className="flex items-center">
-                  {" "}
-                  {feature.icon}{" "}
-                  <span className="font-semibold">{feature.title}</span>
+                <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2">
+                  <div className="flex-shrink-0">{feature.icon}</div>
+                  <span className="font-semibold text-center sm:text-left leading-tight">
+                    {feature.title}
+                  </span>
                 </div>
               </TabsTrigger>
             ))}
@@ -90,18 +94,20 @@ export const FeaturesForTeachers = () => {
             <TabsContent
               key={feature.value}
               value={feature.value}
-              className="mt-8"
+              className="mt-6 sm:mt-8"
             >
-              <div className="grid md:grid-cols-2 gap-8 items-center">
-                <div className="space-y-4">
-                  <h3 className="font-serif text-3xl text-brand-orange">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 items-center">
+                <div className="space-y-3 sm:space-y-4 text-center md:text-left">
+                  <h3 className="font-serif text-2xl sm:text-3xl text-brand-orange">
                     {feature.title}
                   </h3>
-                  <p className="text-slate-600 text-lg">
+                  <p className="text-slate-600 text-base sm:text-lg leading-relaxed">
                     {feature.description}
                   </p>
                 </div>
-                {feature.visual}
+                <div className="order-first md:order-last">
+                  {feature.visual}
+                </div>
               </div>
             </TabsContent>
           ))}

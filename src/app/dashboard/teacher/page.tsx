@@ -20,10 +20,10 @@ export default async function TeacherDashboard() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-brand-blue mb-2">
+      <h1 className="text-2xl sm:text-3xl font-bold text-brand-blue mb-2">
         Welcome back, {profile?.full_name || "Teacher"}!
       </h1>
-      <p className="text-slate-600 mb-6">
+      <p className="text-sm sm:text-base text-slate-600 mb-6">
         Here's your overview for today. More widgets coming soon!
       </p>
       {/* Placeholder for dashboard widgets */}

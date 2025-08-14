@@ -8,7 +8,7 @@ import Groq from 'groq-sdk';
 const assessmentSchema = z.object({
   topic: z.string().min(3, 'Topic is required'),
   numQuestions: z.coerce.number().min(1).max(10),
-  dokLevel: z.enum(['1', '2', '3', '4']),
+  dokLevels: z.array(z.enum(['1', '2', '3', '4'])).min(1, 'Please select at least one DoK level'),
   questionType: z.enum(['mcq', 'short_answer']),
 });
 
@@ -17,6 +17,7 @@ export type QuizQuestion = {
     options?: string[];
     correctAnswer: string;
     type: 'mcq' | 'short_answer';
+    dokLevel?: string;
 };
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
@@ -28,16 +29,26 @@ Your primary task is to generate a quiz as a raw JSON object based on user speci
 You MUST follow these rules:
 1.  **Prioritize the CONTEXT.** All questions, options, and answers must be directly inspired by and aligned with the provided curriculum text. Do not invent information.
 2.  **You MUST ONLY respond with a valid, raw JSON object.** Do not include any explanatory text, markdown, or anything before or after the single JSON object.
-3.  The JSON object must have this exact schema: { "title": "string", "questions": [{ "type": "'mcq' or 'short_answer'", "question": "string", "options": ["string"], "correctAnswer": "string" }] }
+3.  The JSON object must have this exact schema: { "title": "string", "questions": [{ "type": "'mcq' or 'short_answer'", "question": "string", "options": ["string"], "correctAnswer": "string", "dokLevel": "string" }] }
 4.  For 'mcq' type, the 'options' array MUST contain 4 distinct strings.
 5.  For 'mcq' type, the 'correctAnswer' MUST exactly match one of the strings in the 'options' array.
 6.  For 'short_answer' type, the 'options' field MUST be an empty array: [].
 7.  For 'short_answer' type, the 'correctAnswer' MUST be a concise, ideal example answer based on the context.
-8.  The questions must align with the requested Depth of Knowledge (DoK) level.
+8.  Each question MUST include a 'dokLevel' field with the specific DoK level number (1, 2, 3, or 4) that the question targets.
+9.  The questions must align with the requested Depth of Knowledge (DoK) levels and be distributed across them appropriately.
 `;
 
 export async function generateAssessment(prevState: any, formData: FormData) {
-  const validation = assessmentSchema.safeParse(Object.fromEntries(formData.entries()));
+  // Handle multiple DoK levels from form data
+  const formEntries = Object.fromEntries(formData.entries());
+  const dokLevels = formData.getAll('dokLevels');
+  
+  const formDataWithArrays = {
+    ...formEntries,
+    dokLevels: dokLevels
+  };
+  
+  const validation = assessmentSchema.safeParse(formDataWithArrays);
   if (!validation.success) return { error: validation.error.flatten().fieldErrors };
   
   const inputs = validation.data;
@@ -62,15 +73,29 @@ export async function generateAssessment(prevState: any, formData: FormData) {
     if (matchError) throw new Error(`Failed to match chunks: ${matchError.message}`);
     if (!chunks || chunks.length === 0) throw new Error("No relevant content found in the curriculum documents for this topic. Please ensure related documents have been ingested.");
 
-    const contextText = chunks.map((chunk: any) => chunk.content).join("\n\n---\n\n");
+    const contextText = chunks.map((chunk: unknown) => chunk.content).join("\n\n---\n\n");
 
     // --- RAG Step 3: Generate Response with Context ---
+    const dokLevelsText = inputs.dokLevels.map(level => {
+      const descriptions = {
+        '1': 'Level 1 (Recall & Recognition)',
+        '2': 'Level 2 (Skills & Concepts)', 
+        '3': 'Level 3 (Strategic Thinking)',
+        '4': 'Level 4 (Extended Thinking)'
+      };
+      return descriptions[level];
+    }).join(', ');
+
     const userPrompt = `
       User Inputs:
       - Topic: ${inputs.topic}
       - Number of Questions: ${inputs.numQuestions}
       - Question Type: ${inputs.questionType}
-      - Depth of Knowledge (DoK) Level: ${inputs.dokLevel}
+      - Depth of Knowledge (DoK) Levels: ${dokLevelsText}
+
+      IMPORTANT: Distribute the ${inputs.numQuestions} questions across the selected DoK levels (${inputs.dokLevels.join(', ')}). 
+      Each question should clearly align with one of the specified DoK levels. If multiple levels are selected, 
+      create a mix of questions that represent different cognitive demands.
 
       Authoritative Context from SBC Documents:
       ---

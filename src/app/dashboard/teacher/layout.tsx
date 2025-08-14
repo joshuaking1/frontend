@@ -7,10 +7,10 @@ export default function TeacherDashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex">
+    <div className="flex h-screen bg-slate-100">
       <Sidebar />
-      <main className="flex-1 ml-64 p-8 bg-slate-100 min-h-screen">
-        {children}
+      <main className="flex-1 lg:ml-64 overflow-auto">
+        <div className="p-4 sm:p-6 lg:p-8">{children}</div>
       </main>
     </div>
   );
