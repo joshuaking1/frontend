@@ -43,7 +43,7 @@ export const AuthForm = () => {
       options: {
         data: {
           role: values.role, // This sends the role to our DB trigger
-          full_name: "New User" // Placeholder name
+          full_name: "Learnbrigde User" // Placeholder name
         },
       },
     });
@@ -56,7 +56,7 @@ export const AuthForm = () => {
       // We will later build a page to notify the user to check their email.
       // For local dev, Supabase logs a confirmation link in the Docker logs.
       // For now, we redirect to a placeholder page.
-      alert("Sign up successful! Check your email (or Docker logs for the link) to confirm.");
+      alert("Sign up successful! Check your email or spam folder to confirm.");
       router.push('/auth/sign-in');
     }
   };

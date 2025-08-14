@@ -89,7 +89,7 @@ export async function getActiveObserverSuggestions(editorContent: string) {
         `;
         
         const response = await groq.chat.completions.create({
-            model: 'openai/gpt-oss-20b',
+            model: 'meta-llama/llama-4-maverick-17b-128e-instruct',
             messages: [{ role: 'system', content: observerSystemPrompt }, { role: 'user', content: userPrompt }],
             response_format: { type: "json_object" },
         });

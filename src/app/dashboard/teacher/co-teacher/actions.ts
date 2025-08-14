@@ -11,7 +11,7 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 // --- CreateCoTeacher Action (no changes needed) ---
 const createCoTeacherSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters."),
-  persona: z.string().min(10, "Persona description is too short."),
+  persona: z.string().min(10, "Your Co-teacher Persona description is too short."),
 });
 
 export async function createCoTeacher(formData: FormData) {
@@ -86,7 +86,7 @@ export async function getChatResponse(persona: string, history: Message[]) {
 
     try {
         const response = await groq.chat.completions.create({
-            model: 'openai/gpt-oss-20b',
+            model: 'meta-llama/llama-4-maverick-17b-128e-instruct',
             messages: messages,
         });
         return { response: response.choices[0].message.content };
