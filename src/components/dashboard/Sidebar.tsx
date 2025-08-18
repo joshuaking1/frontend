@@ -111,22 +111,18 @@ const SidebarContent = ({ onLinkClick }: { onLinkClick?: () => void }) => {
   );
 };
 
-// Mobile header component
-const MobileHeader = ({ onMenuClick }: { onMenuClick: () => void }) => {
+// Floating hamburger menu button for mobile
+const FloatingMenuButton = ({ onMenuClick }: { onMenuClick: () => void }) => {
   return (
-    <div className="lg:hidden bg-white border-b border-slate-200 p-4 flex items-center justify-between">
-      <Image
-        src="/LearnBridge-logo-inverted-croped.png"
-        alt="LearnBridge"
-        width={150}
-        height={45}
-        className="h-auto w-auto max-w-[150px]"
-        priority
-      />
-      <Button variant="ghost" size="sm" onClick={onMenuClick} className="p-2">
-        <Menu className="h-6 w-6" />
-      </Button>
-    </div>
+    <Button
+      variant="default"
+      size="sm"
+      onClick={onMenuClick}
+      className="lg:hidden fixed top-4 left-4 z-50 bg-brand-blue hover:bg-brand-blue/90 text-white shadow-lg rounded-full p-3"
+      aria-label="Open menu"
+    >
+      <Menu className="h-5 w-5" />
+    </Button>
   );
 };
 
@@ -137,17 +133,20 @@ export const Sidebar = () => {
 
   return (
     <>
-      {/* Mobile Header */}
-      <MobileHeader onMenuClick={() => setIsMobileMenuOpen(true)} />
+      {/* Floating Hamburger Button - Only visible on mobile/tablet */}
+      <FloatingMenuButton onMenuClick={() => setIsMobileMenuOpen(true)} />
 
-      {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 lg:z-50 bg-brand-blue">
+      {/* Desktop Sidebar - Only visible on large screens */}
+      <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 lg:z-50 bg-brand-blue shadow-lg">
         <SidebarContent />
       </aside>
 
-      {/* Mobile Sidebar (Sheet) */}
+      {/* Mobile Sidebar Sheet - Hidden by default, shows when hamburger is clicked */}
       <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-        <SheetContent side="left" className="w-64 p-0 bg-brand-blue border-r-0">
+        <SheetContent
+          side="left"
+          className="w-64 p-0 bg-brand-blue border-r-0 shadow-xl"
+        >
           <SidebarContent onLinkClick={closeMobileMenu} />
         </SheetContent>
       </Sheet>
