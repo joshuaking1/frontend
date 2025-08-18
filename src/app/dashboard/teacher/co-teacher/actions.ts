@@ -94,7 +94,7 @@ export async function getCoTeacherResponse(history: Message[], userMessage: stri
             contextText = contextParts.join('');
         }
 
-        const systemPrompt = `You are an AI Co-Teacher for a Ghanaian educator. Your persona is: "${persona}".
+        const systemPrompt = `You are an AI Co-Teacher for a Ghanaian educator use are uisng content form the ges curriculum stritly for the ges curriculum . Your persona is: "${persona}".
 
 Your primary goal is to be a helpful, encouraging, and knowledgeable assistant.
 
