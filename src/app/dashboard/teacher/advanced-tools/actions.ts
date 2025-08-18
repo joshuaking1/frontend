@@ -99,7 +99,7 @@ export async function generateRubric(prevState: any, formData: FormData) {
         { role: "user", content: userPrompt },
         { role: "assistant", content: `\`\`\`json\n${JSON.stringify(rubricExampleFormat, null, 2)}` }
       ],
-      model: "llama3-70b-8192",
+      model: "meta-llama/llama-4-maverick-17b-128e-instruct",
       temperature: 0.3,
       response_format: { type: "json_object" },
     });
@@ -232,7 +232,7 @@ export async function generateTos(prevState: any, formData: FormData) {
                 { role: "user", content: userPrompt },
                 { role: "assistant", content: `\`\`\`json\n${JSON.stringify(tosExampleFormat, null, 2)}` }
             ],
-            model: "llama3-70b-8192",
+            model: "meta-llama/llama-4-maverick-17b-128e-instruct",
             temperature: 0.4,
             response_format: { type: "json_object" },
         });
@@ -314,7 +314,7 @@ export async function refineContentWithAI(contentId: number, originalContent: an
                 { role: "system", content: refinementSystemPrompt },
                 { role: "user", content: userPrompt },
             ],
-            model: "llama3-70b-8192",
+            model: "meta-llama/llama-4-maverick-17b-128e-instruct",
             temperature: 0.2,
             response_format: { type: "json_object" },
         });

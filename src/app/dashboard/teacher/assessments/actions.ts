@@ -104,7 +104,7 @@ export async function generateAssessment(prevState: any, formData: FormData) {
         { role: "user", content: userPrompt },
         { role: "assistant", content: `\`\`\`json\n${JSON.stringify(exampleFormat, null, 2)}` }
       ],
-      model: "llama3-70b-8192",
+      model: "meta-llama/llama-4-maverick-17b-128e-instruct",
       temperature: 0.3,
       response_format: { type: "json_object" },
     });

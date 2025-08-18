@@ -127,7 +127,7 @@ ${contextText}
         ];
 
         const response = await groq.chat.completions.create({
-            model: 'llama3-70b-8192',
+            model: 'meta-llama/llama-4-maverick-17b-128e-instruct',
             messages: messagesForAI,
             temperature: 0.5,
         });
