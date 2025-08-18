@@ -66,9 +66,9 @@ export const AILessonPlanner = () => {
                   className="mt-1"
                   required
                 />
-                {state.error?.subject && (
+                {state.error?.validation?.subject && (
                   <p className="text-red-500 text-xs sm:text-sm mt-1">
-                    {state.error.subject[0]}
+                    {state.error.validation.subject[0]}
                   </p>
                 )}
               </div>
@@ -83,9 +83,9 @@ export const AILessonPlanner = () => {
                   className="mt-1"
                   required
                 />
-                {state.error?.grade && (
+                {state.error?.validation?.grade && (
                   <p className="text-red-500 text-xs sm:text-sm mt-1">
-                    {state.error.grade[0]}
+                    {state.error.validation.grade[0]}
                   </p>
                 )}
               </div>
@@ -101,9 +101,9 @@ export const AILessonPlanner = () => {
                   className="mt-1"
                   required
                 />
-                {state.error?.week && (
+                {state.error?.validation?.week && (
                   <p className="text-red-500 text-xs sm:text-sm mt-1">
-                    {state.error.week[0]}
+                    {state.error.validation.week[0]}
                   </p>
                 )}
               </div>
@@ -119,9 +119,9 @@ export const AILessonPlanner = () => {
                   className="mt-1"
                   required
                 />
-                {state.error?.duration && (
+                {state.error?.validation?.duration && (
                   <p className="text-red-500 text-xs sm:text-sm mt-1">
-                    {state.error.duration[0]}
+                    {state.error.validation.duration[0]}
                   </p>
                 )}
               </div>
@@ -139,9 +139,9 @@ export const AILessonPlanner = () => {
                 className="mt-1"
                 required
               />
-              {state.error?.strand && (
+              {state.error?.validation?.strand && (
                 <p className="text-red-500 text-xs sm:text-sm mt-1">
-                  {state.error.strand[0]}
+                  {state.error.validation.strand[0]}
                 </p>
               )}
             </div>
@@ -156,9 +156,9 @@ export const AILessonPlanner = () => {
                 className="mt-1"
                 required
               />
-              {state.error?.subStrand && (
+              {state.error?.validation?.subStrand && (
                 <p className="text-red-500 text-xs sm:text-sm mt-1">
-                  {state.error.subStrand[0]}
+                  {state.error.validation.subStrand[0]}
                 </p>
               )}
             </div>
@@ -173,9 +173,9 @@ export const AILessonPlanner = () => {
                 className="mt-1"
                 required
               />
-              {state.error?.topic && (
+              {state.error?.validation?.topic && (
                 <p className="text-red-500 text-xs sm:text-sm mt-1">
-                  {state.error.topic[0]}
+                  {state.error.validation.topic[0]}
                 </p>
               )}
             </div>
