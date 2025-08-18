@@ -133,9 +133,9 @@ export async function generateLessonPlan(prevState: any, formData: FormData) {
       - Topic/Content Standard: ${inputs.topic}
 
       Official Curriculum Context:
-      ```
+      \`\`\`
       ${contextText}
-      ```
+      \`\`\`
 
       Instruction: Generate the lesson plan content as a single, clean JSON object based *only* on the provided context.
     `;
