@@ -18,9 +18,9 @@ export const Hero = () => {
             <span className="text-brand-orange">Start Inspiring Students.</span>
           </h1>
           <p className="text-base sm:text-lg text-slate-600 max-w-lg mx-auto md:mx-0">
-            LearnBridgeEdu is the all-in-one AI platform for Ghanaian teachers
-            and students. Generate lesson plans, create assessments, and master
-            the SBC curriculum in minutes, not weekends.
+            LearnBridge is the all-in-one AI platform for Ghanaian teachers and
+            students. Generate lesson plans, create assessments, and master the
+            SBC curriculum in minutes, not weekends.
           </p>
 
           {/* Mobile-first button layout */}

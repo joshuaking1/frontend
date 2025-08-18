@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import Image from "next/image";
 import {
   LayoutDashboard,
   FileText,
@@ -59,9 +60,14 @@ const SidebarContent = ({ onLinkClick }: { onLinkClick?: () => void }) => {
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="p-4 lg:p-6">
-        <div className="font-serif text-xl lg:text-2xl font-bold text-white">
-          LearnBridgeEdu
-        </div>
+        <Image
+          src="/LearnBridge-logo-inverted-croped.png"
+          alt="LearnBridge"
+          width={200}
+          height={60}
+          className="h-auto w-auto max-w-full"
+          priority
+        />
       </div>
 
       {/* Navigation */}
@@ -109,9 +115,14 @@ const SidebarContent = ({ onLinkClick }: { onLinkClick?: () => void }) => {
 const MobileHeader = ({ onMenuClick }: { onMenuClick: () => void }) => {
   return (
     <div className="lg:hidden bg-white border-b border-slate-200 p-4 flex items-center justify-between">
-      <div className="font-serif text-lg font-bold text-brand-blue">
-        LearnBridgeEdu
-      </div>
+      <Image
+        src="/LearnBridge-logo-inverted-croped.png"
+        alt="LearnBridge"
+        width={150}
+        height={45}
+        className="h-auto w-auto max-w-[150px]"
+        priority
+      />
       <Button variant="ghost" size="sm" onClick={onMenuClick} className="p-2">
         <Menu className="h-6 w-6" />
       </Button>
