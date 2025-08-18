@@ -4,7 +4,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import Image from "next/image";
 import {
   LayoutDashboard,
   FileText,
@@ -60,13 +59,10 @@ const SidebarContent = ({ onLinkClick }: { onLinkClick?: () => void }) => {
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="p-4 lg:p-6">
-        <Image
-          src="/LearnBridge-logo-inverted-croped.png"
+        <img
+          src="/logo.png"
           alt="LearnBridge"
-          width={200}
-          height={60}
-          className="h-auto w-auto max-w-full"
-          priority
+          className="h-auto w-auto max-w-full max-h-[60px]"
         />
       </div>
 

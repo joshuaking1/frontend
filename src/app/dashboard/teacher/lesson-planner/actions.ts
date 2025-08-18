@@ -1,26 +1,29 @@
-// src/app/dashboard/teacher/lesson-planner/actions.ts
-"use server";
+use server";
 
 import { createClient } from "@/lib/supabase/server";
 import { z } from 'zod';
 import Groq from 'groq-sdk';
+import { revalidatePath } from "next/cache";
 
 const lessonPlanSchema = z.object({
-  subject: z.string().min(1), grade: z.string().min(1),
-  week: z.string().min(1), duration: z.string().min(1),
-  strand: z.string().min(1), subStrand: z.string().min(1),
-  topic: z.string().min(3),
+  subject: z.string().min(1),
+  grade: z.string().min(1),
+  week: z.string().min(1),
+  duration: z.string().min(1),
+  strand: z.string().min(1),
+  subStrand: z.string().min(1),
+  topic: z.string().min(3, "The main topic / content standard is required."),
 });
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const supabase = createClient();
 
-const systemPrompt = `
-You are an expert instructional designer for the Ghanaian Standards-Based Curriculum (SBC). Your task is to generate the CONTENT for a lesson plan based on user inputs and **highly relevant, authoritative context** provided from the official curriculum documents.
+const systemPrompt = `You are an expert instructional designer for the Ghanaian SBC. Your task is to generate the CONTENT for a lesson plan based on user inputs and **highly relevant, authoritative context** provided from the official curriculum documents.
 
 You MUST follow these rules:
 1.  **You MUST prioritize the provided CONTEXT.** Your output should be directly inspired by and aligned with the text from the curriculum chunks. Synthesize, do not invent.
-2.  You MUST ONLY respond with a valid, raw JSON object. Do not include any explanatory text, markdown formatting, or anything before or after the JSON object.
-3.  The JSON object must strictly follow this schema:
+2.  **You MUST ONLY respond with a valid, raw JSON object.** Do not include any explanatory text, markdown, or anything before or after the JSON object.
+3.  The JSON object must strictly follow this exact schema:
     {
       "contentStandard": "string", "learningOutcome": "string", "learningIndicator": "string",
       "essentialQuestions": ["string"], "pedagogicalStrategies": ["string"],
@@ -29,83 +32,154 @@ You MUST follow these rules:
       "introductoryActivity": { "teacher": "string", "learner": "string" },
       "mainActivity1": { "teacher": "string", "learner": "string" },
       "mainActivity2": { "teacher": "string", "learner": "string" },
-      "lessonClosure": { "teacher": "string", "learner": "string" }
+      "lessonConclusion": { "teacher": "string", "learner": "string" },
+      "assessmentTasks": { "type": "Formative/Summative", "description": "string", "tasks": ["string"] }
     }
-`;
+4.  If the CONTEXT is insufficient or missing, state that you cannot generate a plan without curriculum context and advise the user to upload the relevant documents. Do not invent content.`;
+
+const exampleFormat = {
+    "contentStandard": "B5.1.1.1: Demonstrate understanding of the properties of materials",
+    "learningOutcome": "Learners will be able to classify materials based on their physical properties.",
+    "learningIndicator": "Learners can group materials into solids, liquids, and gases.",
+    "essentialQuestions": [
+        "What are the different states of matter?",
+        "How can we identify the properties of different materials?"
+    ],
+    "pedagogicalStrategies": [
+        "Inquiry-Based Learning",
+        "Collaborative Learning",
+        "Demonstration"
+    ],
+    "teachingAndLearningResources": [
+        "Variety of materials (water, stone, wood, oil, air in a balloon)",
+        "Charts showing properties of matter",
+        "Worksheets"
+    ],
+    "differentiationNotes": [
+        "For struggling learners, provide a pre-sorted list of items to categorize.",
+        "For advanced learners, ask them to research and present on a material with unusual properties."
+    ],
+    "starterActivity": {
+        "teacher": "Presents a tray of different items (e.g., a rock, a sponge, a glass of water) and asks learners to describe what they see.",
+        "learner": "Observes the items and uses descriptive words to share their observations with a partner."
+    },
+    "introductoryActivity": {
+        "teacher": "Introduces the terms 'solid', 'liquid', and 'gas'. Explains the key properties of each state.",
+        "learner": "Listens to the explanation and writes down the definitions in their notebooks."
+    },
+    "mainActivity1": {
+        "teacher": "Guides learners to work in small groups to sort the items from the starter activity into the three states of matter.",
+        "learner": "Works in a group to discuss, categorize the materials, and justify their choices."
+    },
+    "mainActivity2": {
+        "teacher": "Conducts a simple demonstration, such as boiling water to show the change from liquid to gas (steam).",
+        "learner": "Observes the demonstration, asks questions, and records their observations."
+    },
+    "lessonConclusion": {
+        "teacher": "Leads a class discussion to summarize the key learnings. Asks learners to give examples of solids, liquids, and gases from their daily life.",
+        "learner": "Participates in the discussion and provides examples."
+    },
+    "assessmentTasks": {
+        "type": "Formative",
+        "description": "Assess learners' ability to classify materials and understand their properties through observation and a simple worksheet.",
+        "tasks": [
+            "Worksheet: Match the material to its state.",
+            "Oral questioning: Ask a learner to describe the properties of a liquid."
+        ]
+    }
+};
 
 export async function generateLessonPlan(prevState: any, formData: FormData) {
-  const validation = lessonPlanSchema.safeParse(Object.fromEntries(formData.entries()));
-  if (!validation.success) return { error: validation.error.flatten().fieldErrors };
+  const rawData = Object.fromEntries(formData.entries());
+  const validation = lessonPlanSchema.safeParse(rawData);
+
+  if (!validation.success) {
+    return { error: { validation: validation.error.flatten().fieldErrors }, planData: null };
+  }
   
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: { api: ["Not authenticated."] }, planData: null };
+  }
+
   const inputs = validation.data;
-  
-  // Initialize Supabase client inside the function to ensure proper request scope
-  const supabase = await createClient();
 
   try {
-    // --- RAG Step 1: Get Query Embedding ---
-    const { data: embeddingResponse, error: embeddingError } = await supabase.functions.invoke('text-to-embedding', {
-      body: { text: inputs.topic },
-    });
-    if (embeddingError || !embeddingResponse.embedding) throw new Error(`Failed to get query embedding: ${embeddingError?.message}`);
+    // --- RAG Pipeline ---
+    // Step 1: Create an embedding from the user's query
+    const combinedQuery = `${inputs.subject} ${inputs.grade} ${inputs.strand} ${inputs.subStrand} ${inputs.topic}`;
+    const { data: embeddingResponse, error: embeddingError } = await supabase.functions.invoke('text-to-embedding', { body: { text: combinedQuery } });
+    if (embeddingError) throw new Error(`Embedding Error: ${embeddingError.message}`);
+    if (!embeddingResponse.embedding) throw new Error("Failed to generate a valid embedding for the query.");
+    
     const queryEmbedding = embeddingResponse.embedding;
 
-    // --- RAG Step 2: Match Relevant Chunks ---
+    // Step 2: Match Relevant Chunks from the database
     const { data: chunks, error: matchError } = await supabase.rpc('match_sbc_chunks', {
       query_embedding: queryEmbedding,
-      match_threshold: 0.75, // Adjust this threshold as needed
-      match_count: 5
+      match_threshold: 0.75,
+      match_count: 5 // Get top 5 most relevant chunks
     });
-    if (matchError) throw new Error(`Failed to match chunks: ${matchError.message}`);
+    if (matchError) throw new Error(`Chunk Matching Error: ${matchError.message}`);
     
-    const contextText = chunks.map(chunk => chunk.content).join("\n\n---\n\n");
+    const contextText = chunks && chunks.length > 0 ? chunks.map((chunk: any) => chunk.content).join("\n\n---\n\n") : "No specific curriculum context was found. Please proceed with general pedagogical knowledge.";
+    // --- End RAG ---
 
-    // --- RAG Step 3: Generate Response with Context ---
+    // --- AI Generation Step ---
     const userPrompt = `
       User Inputs:
-      - Subject: ${inputs.subject}, Form: ${inputs.grade}, Week: ${inputs.week}, Duration: ${inputs.duration} mins
+      - Subject: ${inputs.subject}, Grade: ${inputs.grade}, Week: ${inputs.week}, Duration: ${inputs.duration}
       - Strand: ${inputs.strand}, Sub-Strand: ${inputs.subStrand}
-      - Main Topic: ${inputs.topic}
+      - Topic/Content Standard: ${inputs.topic}
 
-      Authoritative Context from SBC Documents:
-      ---
+      Official Curriculum Context:
+      ```
       ${contextText}
-      ---
+      ```
 
-      Based on the user inputs AND the provided context, generate the JSON content for the lesson plan.
+      Instruction: Generate the lesson plan content as a single, clean JSON object based *only* on the provided context.
     `;
 
-    const response = await groq.chat.completions.create({
-      model: 'meta-llama/llama-4-maverick-17b-128e-instruct',
-      messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
-      response_format: { type: "json_object" },
+    const chatCompletion = await groq.chat.completions.create({
+        messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+            { role: "assistant", content: `\`\`\`json\n${JSON.stringify(exampleFormat, null, 2)}` }
+        ],
+        model: "llama3-70b-8192",
+        temperature: 0.25,
+        response_format: { type: "json_object" },
     });
 
-    const jsonContent = response.choices[0].message.content;
-    const planData = JSON.parse(jsonContent);
+    const aiResponse = chatCompletion.choices[0]?.message?.content;
+    if (!aiResponse) {
+      throw new Error("AI failed to generate a response.");
+    }
+
+    const planData = JSON.parse(aiResponse);
     
-    // Save to teacher_content table
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-        // Generate embedding for the lesson plan content
-        const fullContentForEmbedding = `Title: ${inputs.topic}. Content: ${JSON.stringify(planData)}`;
-        const { data: embeddingResponse } = await supabase.functions.invoke('text-to-embedding', { body: { text: fullContentForEmbedding } });
-        
-        // Now include the embedding in the insert
-        await supabase.from('teacher_content').insert({
-            owner_id: user.id,
-            content_type: 'lesson_plan',
-            title: `${inputs.subject}: ${inputs.topic}`,
-            subject: inputs.subject,
-            structured_content: { inputs, aiContent: planData }, // Save the entire payload
-            embedding: embeddingResponse.embedding // SAVE THE EMBEDDING
-        });
+    // --- Save to DB Step ---
+    const fullContentForEmbedding = `Title: ${inputs.topic}. Content: ${JSON.stringify(planData)}`;
+    const { data: contentEmbeddingResponse, error: contentEmbeddingError } = await supabase.functions.invoke('text-to-embedding', { body: { text: fullContentForEmbedding } });
+    if (contentEmbeddingError) {
+        // Log the error but don't block the user from getting their plan
+        console.error("Content Embedding Error on save:", contentEmbeddingError);
     }
     
+    await supabase.from('teacher_content').insert({
+        owner_id: user.id,
+        content_type: 'lesson_plan',
+        title: `${inputs.subject}: ${inputs.topic}`,
+        subject: inputs.subject,
+        structured_content: { inputs, aiContent: planData },
+        embedding: contentEmbeddingResponse?.embedding // Use the embedding if available
+    });
+
+    revalidatePath('/dashboard/teacher/resources'); // Revalidate the content hub to show the new item
     return { planData: { inputs, aiContent: planData }, error: null };
 
-  } catch (e) {
+  } catch (e: any) {
     console.error("RAG Lesson Plan Error:", e);
-    return { error: { api: ["Failed to generate lesson plan with RAG. " + e.message] }, planData: null };
+    return { error: { api: [`An error occurred: ${e.message}`] }, planData: null };
   }
 }

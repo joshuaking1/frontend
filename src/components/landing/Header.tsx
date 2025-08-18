@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
 import { useState } from "react";
 
 export const Header = () => {
@@ -22,13 +21,10 @@ export const Header = () => {
       <div className="container mx-auto flex justify-between items-center">
         {/* Logo */}
         <div className="flex items-center space-x-2">
-          <Image
-            src="/LearnBridge-logo-inverted-croped.png"
+          <img
+            src="/logo.png"
             alt="LearnBridge"
-            width={180}
-            height={50}
-            className="h-auto w-auto max-w-[180px]"
-            priority
+            className="h-auto w-auto max-w-[180px] max-h-[50px]"
           />
         </div>
 
@@ -64,13 +60,10 @@ export const Header = () => {
           <SheetContent side="right" className="w-[300px] sm:w-[400px]">
             <div className="flex flex-col space-y-6 mt-6">
               <div className="flex items-center justify-between">
-                <Image
-                  src="/LearnBridge-logo-inverted-croped.png"
+                <img
+                  src="/logo.png"
                   alt="LearnBridge"
-                  width={150}
-                  height={40}
-                  className="h-auto w-auto max-w-[150px]"
-                  priority
+                  className="h-auto w-auto max-w-[150px] max-h-[40px]"
                 />
               </div>
 

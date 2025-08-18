@@ -1,123 +1,136 @@
-// src/app/dashboard/teacher/assessments/actions.ts
-"use server";
+use server";
 
-import { createClient } from "@/lib/supabase/server"; // Import the Supabase client
+import { createClient } from "@/lib/supabase/server";
 import { z } from 'zod';
 import Groq from 'groq-sdk';
+import { revalidatePath } from "next/cache";
 
-const assessmentSchema = z.object({
-  topic: z.string().min(3, 'Topic is required'),
-  numQuestions: z.coerce.number().min(1).max(10),
-  dokLevels: z.array(z.enum(['1', '2', '3', '4'])).min(1, 'Please select at least one DoK level'),
-  questionType: z.enum(['mcq', 'short_answer']),
-});
-
-export type QuizQuestion = {
-    question: string;
-    options?: string[];
-    correctAnswer: string;
-    type: 'mcq' | 'short_answer';
-    dokLevel?: string;
-};
-
+const supabase = createClient();
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-const systemPrompt = `
-You are an expert in educational assessment design, specializing in the Ghanaian curriculum.
-Your primary task is to generate a quiz as a raw JSON object based on user specifications and, most importantly, the **provided authoritative context** from the official curriculum.
+const assessmentSchema = z.object({
+  subject: z.string().min(1, "Subject is required"),
+  grade: z.string().min(1, "Grade is required"),
+  topic: z.string().min(3, "Topic is required."),
+  numQuestions: z.coerce.number().int().min(1, "Number of questions must be at least 1.").max(20, "Number of questions cannot exceed 20."),
+  questionType: z.enum(['any', 'mcq', 'short_answer']),
+  dokLevel: z.enum(['1', '2', '3', '4']),
+});
+
+const systemPrompt = `You are an expert in educational assessment design for the Ghanaian SBC. Your primary task is to generate a quiz as a raw JSON object based on user specifications and, most importantly, the **provided authoritative context** from the official curriculum.
 
 You MUST follow these rules:
-1.  **Prioritize the CONTEXT.** All questions, options, and answers must be directly inspired by and aligned with the provided curriculum text. Do not invent information.
-2.  **You MUST ONLY respond with a valid, raw JSON object.** Do not include any explanatory text, markdown, or anything before or after the single JSON object.
-3.  The JSON object must have this exact schema: { "title": "string", "questions": [{ "type": "'mcq' or 'short_answer'", "question": "string", "options": ["string"], "correctAnswer": "string", "dokLevel": "string" }] }
-4.  For 'mcq' type, the 'options' array MUST contain 4 distinct strings.
+1.  **Prioritize the CONTEXT.** All questions, options, and answers must be directly derived from the provided curriculum text. Do not invent information.
+2.  **You MUST ONLY respond with a valid, raw JSON object.** Do not include any explanatory text or markdown.
+3.  The JSON object must have this exact schema: { "title": "string", "questions": [ { "type": "'mcq' or 'short_answer'", "question": "string", "options": ["string"], "correctAnswer": "string" } ] }
+4.  For 'mcq' type, the 'options' array MUST contain exactly 4 distinct strings.
 5.  For 'mcq' type, the 'correctAnswer' MUST exactly match one of the strings in the 'options' array.
 6.  For 'short_answer' type, the 'options' field MUST be an empty array: [].
-7.  For 'short_answer' type, the 'correctAnswer' MUST be a concise, ideal example answer based on the context.
-8.  Each question MUST include a 'dokLevel' field with the specific DoK level number (1, 2, 3, or 4) that the question targets.
-9.  The questions must align with the requested Depth of Knowledge (DoK) levels and be distributed across them appropriately.
-`;
+7.  For 'short_answer' type, the 'correctAnswer' MUST be a concise, factual answer based on the context.
+8.  If the CONTEXT is insufficient, you must state this in the quiz title and generate no questions.`;
+
+const exampleFormat = {
+    "title": "Quiz on the Properties of Water",
+    "questions": [
+        {
+            "type": "mcq",
+            "question": "Which of the following best describes water in its solid state?",
+            "options": [
+                "Steam",
+                "Ice",
+                "Vapor",
+                "Liquid"
+            ],
+            "correctAnswer": "Ice"
+        },
+        {
+            "type": "short_answer",
+            "question": "At what temperature Celsius does water boil at sea level?",
+            "options": [],
+            "correctAnswer": "100°C"
+        }
+    ]
+};
 
 export async function generateAssessment(prevState: any, formData: FormData) {
-  // Handle multiple DoK levels from form data
-  const formEntries = Object.fromEntries(formData.entries());
-  const dokLevels = formData.getAll('dokLevels');
-  
-  const formDataWithArrays = {
-    ...formEntries,
-    dokLevels: dokLevels
-  };
-  
-  const validation = assessmentSchema.safeParse(formDataWithArrays);
-  if (!validation.success) return { error: validation.error.flatten().fieldErrors };
-  
+  const rawData = Object.fromEntries(formData.entries());
+  const validation = assessmentSchema.safeParse(rawData);
+
+  if (!validation.success) {
+    return { error: { validation: validation.error.flatten().fieldErrors }, quiz: null };
+  }
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: { api: ["Not authenticated."] }, quiz: null };
+  }
+
   const inputs = validation.data;
 
-  // Initialize Supabase client inside the function to ensure proper request scope
-  const supabase = await createClient();
-
   try {
-    // --- RAG Step 1: Get Query Embedding ---
-    const { data: embeddingResponse, error: embeddingError } = await supabase.functions.invoke('text-to-embedding', {
-      body: { text: inputs.topic },
-    });
-    if (embeddingError || !embeddingResponse.embedding) throw new Error(`Failed to get query embedding: ${embeddingError?.message}`);
-    const queryEmbedding = embeddingResponse.embedding;
+    // --- RAG Pipeline ---
+    const combinedQuery = `Quiz for ${inputs.grade} ${inputs.subject} on ${inputs.topic}. Depth of Knowledge: ${inputs.dokLevel}`;
+    const { data: embeddingResponse, error: embeddingError } = await supabase.functions.invoke('text-to-embedding', { body: { text: combinedQuery } });
+    if (embeddingError) throw new Error(`Embedding Error: ${embeddingError.message}`);
 
-    // --- RAG Step 2: Match Relevant Chunks ---
     const { data: chunks, error: matchError } = await supabase.rpc('match_sbc_chunks', {
-      query_embedding: queryEmbedding,
-      match_threshold: 0.7, // Using a slightly lower threshold for broader context
-      match_count: 5
+      query_embedding: embeddingResponse.embedding,
+      match_threshold: 0.7,
+      match_count: 8 // Fetch more chunks for broader context
     });
-    if (matchError) throw new Error(`Failed to match chunks: ${matchError.message}`);
-    if (!chunks || chunks.length === 0) throw new Error("No relevant content found in the curriculum documents for this topic. Please ensure related documents have been ingested.");
+    if (matchError) throw new Error(`Chunk Matching Error: ${matchError.message}`);
+    
+    const contextText = chunks && chunks.length > 0 ? chunks.map((chunk: any) => chunk.content).join("\n\n---\n\n") : "No specific curriculum context was found.";
+    // --- End RAG ---
 
-    const contextText = chunks.map((chunk: unknown) => chunk.content).join("\n\n---\n\n");
-
-    // --- RAG Step 3: Generate Response with Context ---
-    const dokLevelsText = inputs.dokLevels.map(level => {
-      const descriptions = {
-        '1': 'Level 1 (Recall & Recognition)',
-        '2': 'Level 2 (Skills & Concepts)', 
-        '3': 'Level 3 (Strategic Thinking)',
-        '4': 'Level 4 (Extended Thinking)'
-      };
-      return descriptions[level];
-    }).join(', ');
-
+    // --- AI Generation Step ---
     const userPrompt = `
-      User Inputs:
+      Generate a quiz JSON object with the following specifications:
       - Topic: ${inputs.topic}
       - Number of Questions: ${inputs.numQuestions}
-      - Question Type: ${inputs.questionType}
-      - Depth of Knowledge (DoK) Levels: ${dokLevelsText}
+      - Question Type(s): ${inputs.questionType}
+      - Grade: ${inputs.grade}
+      - Depth of Knowledge (DoK) Level: ${inputs.dokLevel}
 
-      IMPORTANT: Distribute the ${inputs.numQuestions} questions across the selected DoK levels (${inputs.dokLevels.join(', ')}). 
-      Each question should clearly align with one of the specified DoK levels. If multiple levels are selected, 
-      create a mix of questions that represent different cognitive demands.
-
-      Authoritative Context from SBC Documents:
+      Use the following authoritative context from the SBC curriculum to construct the quiz:
       ---
       ${contextText}
       ---
-
-      Based on the user inputs AND the provided context, generate the quiz JSON object.
     `;
 
-    const response = await groq.chat.completions.create({
-      model: 'meta-llama/llama-4-maverick-17b-128e-instruct',
-      messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
+    const chatCompletion = await groq.chat.completions.create({
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+        { role: "assistant", content: `\`\`\`json\n${JSON.stringify(exampleFormat, null, 2)}` }
+      ],
+      model: "llama3-70b-8192",
+      temperature: 0.3,
       response_format: { type: "json_object" },
     });
 
-    const jsonContent = response.choices[0].message.content;
-    const quizData = JSON.parse(jsonContent);
-    
-    return { quiz: quizData, error: null };
+    const aiResponse = chatCompletion.choices[0]?.message?.content;
+    if (!aiResponse) throw new Error("AI returned an empty response.");
+    const quizData = JSON.parse(aiResponse);
 
-  } catch (e) {
+    // --- Save to DB Step ---
+    const fullContentForEmbedding = `Quiz on ${quizData.title}: ${JSON.stringify(quizData.questions)}`;
+    const { data: contentEmbedding } = await supabase.functions.invoke('text-to-embedding', { body: { text: fullContentForEmbedding } });
+    
+    await supabase.from('teacher_content').insert({
+        owner_id: user.id,
+        content_type: 'assessment',
+        title: quizData.title || `Assessment for ${inputs.topic}`,
+        subject: inputs.subject,
+        structured_content: { inputs, aiContent: quizData },
+        embedding: contentEmbedding.embedding
+    });
+
+    revalidatePath('/dashboard/teacher/resources'); // Revalidate the content hub
+    return { quiz: { inputs, aiContent: quizData }, error: null };
+
+  } catch (e: any) {
     console.error("RAG Assessment Error:", e);
-    return { error: { api: [e.message] }, quiz: null };
+    return { error: { api: [`An error occurred: ${e.message}`] }, quiz: null };
   }
 }

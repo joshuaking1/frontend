@@ -1,97 +1,131 @@
-// src/app/dashboard/teacher/co-teacher/actions.ts
-"use server";
+use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { revalidatePath } from "next/cache";
-import { z } from "zod";
+import { z } from 'zod';
 import Groq from 'groq-sdk';
+import { revalidatePath } from 'next/cache';
 
+const supabase = createClient();
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-// --- CreateCoTeacher Action (no changes needed) ---
+// ######################################################################
+// ACTION 1: CREATE A NEW AI CO-TEACHER
+// ######################################################################
+
 const createCoTeacherSchema = z.object({
-  name: z.string().min(3, "Name must be at least 3 characters."),
-  persona: z.string().min(10, "Your Co-teacher Persona description is too short."),
+  name: z.string().min(3, "Name must be at least 3 characters long."),
+  persona: z.string().min(10, "Persona description must be at least 10 characters long."),
 });
 
-export async function createCoTeacher(formData: FormData) {
-  const supabase = await createClient();
+export async function createCoTeacher(prevState: any, formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated." };
 
   const validation = createCoTeacherSchema.safeParse(Object.fromEntries(formData.entries()));
-  if (!validation.success) return { error: "Invalid data." };
+  if (!validation.success) {
+    const firstError = Object.values(validation.error.flatten().fieldErrors)[0]?.[0];
+    return { error: firstError || "Invalid data." };
+  }
 
   const { name, persona } = validation.data;
 
   const { error } = await supabase.from('ai_co_teachers').insert({
-    creator_id: user.id, name: name, persona_description: persona,
+    creator_id: user.id,
+    name: name,
+    persona_description: persona,
   });
 
-  if (error) return { error: "Failed to save co-teacher." };
+  if (error) {
+    console.error("Create Co-Teacher Error:", error);
+    return { error: "Failed to save co-teacher to the database." };
+  }
 
   revalidatePath('/dashboard/teacher/co-teacher');
-  return { success: true };
+  return { success: true, error: null };
 }
 
 
-// --- getChatResponse Action (UPGRADED WITH RAG) ---
-type Message = { role: "user" | "assistant", content: string };
+// ######################################################################
+// ACTION 2: THE 100x RAG-POWERED CHAT RESPONDER
+// This action is now fully integrated with our RAG pipeline.
+// ######################################################################
 
-export async function getChatResponse(persona: string, history: Message[]) {
-    const supabase = await createClient();
-    
-    // The user's most recent message is the primary query for our RAG search.
-    const userQuery = history[history.length - 1].content;
+type Message = { role: 'user' | 'assistant'; content: string };
 
-    // --- RAG Step 1: Get Query Embedding ---
-    const { data: embeddingResponse, error: embeddingError } = await supabase.functions.invoke('text-to-embedding', {
-      body: { text: userQuery },
-    });
-    if (embeddingError) console.error("RAG Embedding Error:", embeddingError.message);
-    const queryEmbedding = embeddingResponse?.embedding;
-
-    // --- RAG Step 2: Match Relevant Chunks ---
-    let contextText = "No specific curriculum context was found for this query.";
-    if (queryEmbedding) {
-        const { data: chunks, error: matchError } = await supabase.rpc('match_sbc_chunks', {
-          query_embedding: queryEmbedding,
-          match_threshold: 0.7,
-          match_count: 3 // Retrieve the top 3 chunks for a focused context
-        });
-
-        if (matchError) console.error("RAG Match Error:", matchError.message);
-
-        if (chunks && chunks.length > 0) {
-            contextText = chunks.map((chunk: any) => chunk.content).join("\n\n---\n\n");
-        }
-    }
-
-    // --- RAG Step 3: Generate Response with Context ---
-    const systemPrompt = `You are an AI Co-Teacher. Your defined persona is: "${persona}".
-    You must always stay in this character.
-    You are assisting a Ghanaian teacher. Below is some highly relevant context from the official SBC curriculum that relates to the user's latest message.
-    You MUST use this context to inform your response, making you a curriculum expert. If the context is relevant, refer to it. If it says 'No specific context was found', you can answer more generally but still within your persona.
-
-    --- CURRICULUM CONTEXT ---
-    ${contextText}
-    --- END CONTEXT ---
-    `;
-
-    // We send the system prompt (with context) and the full chat history to the AI.
-    const messages = [
-        { role: 'system', content: systemPrompt },
-        ...history
-    ];
+export async function getCoTeacherResponse(history: Message[], userMessage: string, persona: string) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Not authenticated.", response: null };
 
     try {
+        // --- RAG Pipeline ---
+        const { data: embeddingResponse, error: embeddingError } = await supabase.functions.invoke('text-to-embedding', { body: { text: userMessage } });
+        if (embeddingError) throw new Error(`Embedding Error: ${embeddingError.message}`);
+        const queryEmbedding = embeddingResponse.embedding;
+
+        const [sbcChunksResult, teacherContentResult] = await Promise.all([
+            supabase.rpc('match_sbc_chunks', {
+                query_embedding: queryEmbedding,
+                match_threshold: 0.7,
+                match_count: 3
+            }),
+            supabase.rpc('match_teacher_content', {
+                owner_id: user.id,
+                query_embedding: queryEmbedding,
+                match_threshold: 0.7,
+                match_count: 2
+            })
+        ]);
+
+        const { data: sbcChunks, error: sbcError } = sbcChunksResult;
+        const { data: teacherContent, error: teacherContentError } = teacherContentResult;
+
+        if (sbcError) console.error("SBC Chunk Error:", sbcError.message);
+        if (teacherContentError) console.error("Teacher Content Error:", teacherContentError.message);
+
+        let contextText = "No specific context was found in the curriculum or your content hub for this query.";
+        const contextParts: string[] = [];
+        if (sbcChunks && sbcChunks.length > 0) {
+            contextParts.push("\n\nRelevant SBC Excerpts:\n" + sbcChunks.map((c: any) => `- ${c.content.substring(0, 250)}...`).join('\n'));
+        }
+        if (teacherContent && teacherContent.length > 0) {
+            contextParts.push("\n\nRelevant Items from Your Content Hub:\n" + teacherContent.map((c: any) => `- Title: ${c.title} (Type: ${c.content_type})`).join('\n'));
+        }
+        if (contextParts.length > 0) {
+            contextText = contextParts.join('');
+        }
+
+        const systemPrompt = `You are an AI Co-Teacher for a Ghanaian educator. Your persona is: "${persona}".
+
+Your primary goal is to be a helpful, encouraging, and knowledgeable assistant.
+
+RULES:
+1.  **Adhere to your Persona:** Maintain the persona described above in all your responses.
+2.  **Prioritize CONTEXT:** You have been provided with highly relevant context from both the official SBC curriculum and the teacher's own saved content. You MUST ground your answer in this context. Refer to it like, "According to the SBC..." or "In the rubric you created...".
+3.  **Be Conversational:** Engage the user in a natural, helpful dialogue. Ask clarifying questions if their query is ambiguous.
+4.  **Answer the Question:** Directly address the user's most recent message, using the provided chat history for context.
+
+--- CONTEXT ---
+${contextText}
+--- END CONTEXT ---`;
+
+        const messagesForAI: { role: "system" | "user" | "assistant"; content: string }[] = [
+            { role: "system", content: systemPrompt },
+            ...history,
+            { role: "user", content: userMessage }
+        ];
+
         const response = await groq.chat.completions.create({
-            model: 'meta-llama/llama-4-maverick-17b-128e-instruct',
-            messages: messages,
+            model: 'llama3-70b-8192',
+            messages: messagesForAI,
+            temperature: 0.5,
         });
-        return { response: response.choices[0].message.content };
-    } catch (e) {
+
+        const aiResponse = response.choices[0].message.content;
+        if (!aiResponse) throw new Error("AI returned an empty response.");
+
+        return { response: aiResponse, error: null };
+    } catch (e: any) {
         console.error("Co-Teacher Chat Error:", e);
-        return { error: "I'm having trouble connecting right now. Please try again." };
+        return { error: `I'm having trouble connecting right now: ${e.message}`, response: null };
     }
 }
