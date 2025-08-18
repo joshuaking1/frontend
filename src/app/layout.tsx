@@ -15,7 +15,11 @@ const dmSerifDisplay = DM_Serif_Display({
 
 export const metadata: Metadata = {
   title: "LearnBridgeEdu | AI-Powered Learning for Ghana's SBC",
-  description: "The AI-driven platform for Ghanaian teachers and students to master the Standards-Based Curriculum.",
+  description:
+    "The AI-driven platform for Ghanaian teachers and students to master the Standards-Based Curriculum.",
+  icons: {
+    icon: "/favicon-32x32.svg",
+  },
 };
 
 export default function RootLayout({
@@ -25,7 +29,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body 
+      <body
         className={`${inter.variable} ${dmSerifDisplay.variable} bg-slate-50 font-sans text-slate-800`}
         suppressHydrationWarning={true}
       >

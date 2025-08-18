@@ -17,7 +17,7 @@ import {
   Menu,
 } from "lucide-react";
 import { signOut } from "@/app/auth/actions";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 
 const navLinks = [

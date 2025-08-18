@@ -3,6 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import {
   Home,
   Compass,
@@ -16,6 +17,7 @@ import {
   Camera,
   GraduationCap,
   BarChart,
+  Menu,
 } from "lucide-react";
 import { signOut } from "@/app/auth/actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -26,6 +28,8 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 
 // The new, 100x data structure for our navigation
 const navGroups = [

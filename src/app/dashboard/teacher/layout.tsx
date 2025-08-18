@@ -10,7 +10,7 @@ export default function TeacherDashboardLayout({
     <div className="flex h-screen bg-slate-100">
       <Sidebar />
       <main className="flex-1 lg:ml-64 overflow-auto">
-        <div className="p-4 sm:p-6 lg:p-8">{children}</div>
+        <div className="pt-16 lg:pt-0 p-4 sm:p-6 lg:p-8">{children}</div>
       </main>
     </div>
   );
