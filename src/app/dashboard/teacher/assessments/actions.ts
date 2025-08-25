@@ -5,7 +5,6 @@ import { z } from 'zod';
 import Groq from 'groq-sdk';
 import { revalidatePath } from "next/cache";
 
-const supabase = createClient();
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 const assessmentSchema = z.object({
@@ -14,7 +13,7 @@ const assessmentSchema = z.object({
   topic: z.string().min(3, "Topic is required."),
   numQuestions: z.coerce.number().int().min(1, "Number of questions must be at least 1.").max(20, "Number of questions cannot exceed 20."),
   questionType: z.enum(['any', 'mcq', 'short_answer']),
-  dokLevel: z.enum(['1', '2', '3', '4']),
+  dokLevels: z.array(z.enum(['1', '2', '3', '4'])).min(1, "At least one DoK level is required."),
 });
 
 const systemPrompt = `You are an expert in educational assessment design for the Ghanaian SBC. Your primary task is to generate a quiz as a raw JSON object based on user specifications and, most importantly, the **provided authoritative context** from the official curriculum.
@@ -53,11 +52,22 @@ const exampleFormat = {
 };
 
 export async function generateAssessment(prevState: any, formData: FormData) {
-  const rawData = Object.fromEntries(formData.entries());
+  const supabase = await createClient();
+  
+  // Manually construct rawData to handle array fields correctly
+  const rawData = {
+    subject: formData.get('subject'),
+    grade: formData.get('grade'),
+    topic: formData.get('topic'),
+    numQuestions: formData.get('numQuestions'),
+    questionType: formData.get('questionType'),
+    dokLevels: formData.getAll('dokLevels'), // Use getAll to capture all selected checkbox values
+  };
+
   const validation = assessmentSchema.safeParse(rawData);
 
   if (!validation.success) {
-    return { error: { validation: validation.error.flatten().fieldErrors }, quiz: null };
+    return { error: validation.error.flatten().fieldErrors, quiz: null };
   }
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -66,16 +76,17 @@ export async function generateAssessment(prevState: any, formData: FormData) {
   }
 
   const inputs = validation.data;
+  inputs.topic = inputs.topic.trim();
 
   try {
     // --- RAG Pipeline ---
-    const combinedQuery = `Quiz for ${inputs.grade} ${inputs.subject} on ${inputs.topic}. Depth of Knowledge: ${inputs.dokLevel}`;
+    const combinedQuery = `Quiz for ${inputs.grade} ${inputs.subject} on ${inputs.topic}. Depth of Knowledge levels: ${inputs.dokLevels.join(', ')}`;
     const { data: embeddingResponse, error: embeddingError } = await supabase.functions.invoke('text-to-embedding', { body: { text: combinedQuery } });
     if (embeddingError) throw new Error(`Embedding Error: ${embeddingError.message}`);
 
     const { data: chunks, error: matchError } = await supabase.rpc('match_sbc_chunks', {
       query_embedding: embeddingResponse.embedding,
-      match_threshold: 0.7,
+      match_threshold: 0.5, // Lowered from 0.7
       match_count: 8 // Fetch more chunks for broader context
     });
     if (matchError) throw new Error(`Chunk Matching Error: ${matchError.message}`);
@@ -90,7 +101,7 @@ export async function generateAssessment(prevState: any, formData: FormData) {
       - Number of Questions: ${inputs.numQuestions}
       - Question Type(s): ${inputs.questionType}
       - Grade: ${inputs.grade}
-      - Depth of Knowledge (DoK) Level: ${inputs.dokLevel}
+      - Depth of Knowledge (DoK) Levels: ${inputs.dokLevels.join(', ')}
 
       Use the following authoritative context from the SBC curriculum to construct the quiz:
       ---

@@ -163,6 +163,36 @@ export const AIAssessmentGenerator = () => {
         </CardHeader>
         <CardContent>
           <form action={formAction} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="subject">Subject</Label>
+                <Input
+                  id="subject"
+                  name="subject"
+                  placeholder="e.g., Science"
+                  required
+                />
+                {state.error?.subject && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {state.error.subject[0]}
+                  </p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="grade">Grade Level</Label>
+                <Input
+                  id="grade"
+                  name="grade"
+                  placeholder="e.g., Primary 1"
+                  required
+                />
+                {state.error?.grade && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {state.error.grade[0]}
+                  </p>
+                )}
+              </div>
+            </div>
             <div>
               <Label htmlFor="topic">Lesson Topic</Label>
               <Input
@@ -326,7 +356,21 @@ export const AIAssessmentGenerator = () => {
 
       {/* Display Section */}
       <div className="lg:col-span-2">
-        {!state.quiz && (
+        {state.quiz && state.quiz.aiContent && state.quiz.aiContent.title.includes("Insufficient context") ? (
+          <div className="flex flex-col items-center justify-center h-full bg-white rounded-lg p-8 border-2 border-dashed">
+            <FileText className="h-16 w-16 text-slate-300" />
+            <h3 className="font-serif text-2xl mt-4 text-slate-600">
+              Could not generate assessment.
+            </h3>
+            <p className="text-slate-500 mt-2 text-center">
+              The system could not find enough information to generate an assessment for the topic "{state.quiz.inputs.topic}".
+              <br />
+              Please try a broader topic or check for typos.
+            </p>
+          </div>
+        ) : state.quiz && state.quiz.aiContent ? (
+          <QuizDisplay quiz={state.quiz.aiContent} />
+        ) : (
           <div className="flex flex-col items-center justify-center h-full bg-white rounded-lg p-8 border-2 border-dashed">
             <FileText className="h-16 w-16 text-slate-300" />
             <h3 className="font-serif text-2xl mt-4 text-slate-600">
@@ -337,7 +381,6 @@ export const AIAssessmentGenerator = () => {
             </p>
           </div>
         )}
-        {state.quiz && <QuizDisplay quiz={state.quiz} />}
         {state.error?.api && (
           <p className="text-red-500 text-center p-4">{state.error.api[0]}</p>
         )}

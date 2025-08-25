@@ -23,7 +23,7 @@ type AIContent = {
   introductoryActivity: { teacher: string; learner: string };
   mainActivity1: { teacher: string; learner: string };
   mainActivity2: { teacher: string; learner: string };
-  lessonClosure: { teacher: string; learner: string };
+  lessonConclusion: { teacher: string; learner: string };
 };
 
 type LessonPlanDisplayProps = {
@@ -305,7 +305,7 @@ export const LessonPlanDisplay = ({ planData }: LessonPlanDisplayProps) => {
                   Lesson Closure (15 minutes)
                 </h4>
                 <p className="text-sm sm:text-base leading-relaxed">
-                  {aiContent.lessonClosure.teacher}
+                  {aiContent.lessonConclusion.teacher}
                 </p>
               </div>
             </div>

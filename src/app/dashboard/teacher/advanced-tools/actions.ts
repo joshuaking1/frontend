@@ -71,10 +71,13 @@ export async function generateRubric(prevState: any, formData: FormData) {
     return { error: { validation: validation.error.flatten().fieldErrors }, data: null };
   }
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return { error: { api: ["Not authenticated."] }, data: null };
+  const { data: userData, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !userData?.user) {
+    return { error: { api: ["Authentication error. Please sign in again."] }, data: null };
   }
+
+  const user = userData.user;
 
   const inputs = validation.data;
 
@@ -204,10 +207,13 @@ export async function generateTos(prevState: any, formData: FormData) {
         return { error: { validation: validation.error.flatten().fieldErrors }, data: null };
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-        return { error: { api: ["Not authenticated."] }, data: null };
+    const { data: userData, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !userData?.user) {
+        return { error: { api: ["Authentication error. Please sign in again."] }, data: null };
     }
+
+    const user = userData.user;
 
     const inputs = validation.data;
 

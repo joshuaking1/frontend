@@ -98,10 +98,9 @@ function RubricDisplay({ rubric }: { rubric: any }) {
   );
 }
 
-// This is the complete, final RubricGenerator component.
 export function RubricGenerator() {
   const [state, formAction] = useActionState(generateRubric, {
-    rubric: null,
+    data: null,
     error: null,
   });
 
@@ -118,6 +117,20 @@ export function RubricGenerator() {
       </CardHeader>
       <CardContent>
         <form action={formAction} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="subject" className="font-semibold">
+                Subject
+              </Label>
+              <Input id="subject" name="subject" placeholder="e.g., History" />
+            </div>
+            <div>
+              <Label htmlFor="grade" className="font-semibold">
+                Grade/Class
+              </Label>
+              <Input id="grade" name="grade" placeholder="e.g., JHS 2" />
+            </div>
+          </div>
           <div>
             <Label htmlFor="topic" className="font-semibold">
               Topic for Context
@@ -144,15 +157,27 @@ export function RubricGenerator() {
           </div>
         </form>
 
-        {/* Loading state can be handled by the disabled button, but we can add a global one too */}
+        {state?.error?.validation && (
+          <div className="mt-4 space-y-2 text-sm text-red-600 bg-red-50 p-3 rounded-md">
+            <p className="font-semibold">Please fix the following errors:</p>
+            <ul className="list-disc pl-5">
+              {Object.entries(state.error.validation).map(([key, errors]) => (
+                <li key={key}>
+                  <span className="font-semibold capitalize">{key}:</span>{' '}
+                  {errors.join(', ')}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
-        {state.rubric && <RubricDisplay rubric={state.rubric} />}
-
-        {state.error && (
+        {state?.error?.api && (
           <p className="text-red-600 font-semibold mt-4 bg-red-50 p-3 rounded-md">
-            {state.error}
+            {state.error.api.join(', ')}
           </p>
         )}
+
+        {state?.data?.aiContent && <RubricDisplay rubric={state.data.aiContent} />}
       </CardContent>
     </Card>
   );

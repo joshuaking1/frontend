@@ -16,7 +16,6 @@ const lessonPlanSchema = z.object({
 });
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-const supabase = createClient();
 
 const systemPrompt = `You are an expert instructional designer for the Ghanaian SBC. Your task is to generate the CONTENT for a lesson plan based on user inputs and **highly relevant, authoritative context** provided from the official curriculum documents.
 
@@ -90,6 +89,7 @@ const exampleFormat = {
 };
 
 export async function generateLessonPlan(prevState: any, formData: FormData) {
+  const supabase = await createClient();
   const rawData = Object.fromEntries(formData.entries());
   const validation = lessonPlanSchema.safeParse(rawData);
 

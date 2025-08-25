@@ -1,7 +1,8 @@
 // src/components/dashboard/AILessonPlanner.tsx
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useFormStatus } from "react-dom";
+import { useActionState } from "react";
 import { generateLessonPlan } from "@/app/dashboard/teacher/lesson-planner/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,7 +40,7 @@ function SubmitButton() {
 }
 
 export const AILessonPlanner = () => {
-  const [state, formAction] = useFormState(generateLessonPlan, initialState);
+  const [state, formAction] = useActionState(generateLessonPlan, initialState);
 
   return (
     <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6 lg:gap-8">
