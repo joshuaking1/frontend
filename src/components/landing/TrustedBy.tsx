@@ -21,7 +21,7 @@ export const TrustedBy = () => {
               key={partner}
               className="text-lg font-semibold text-slate-400 grayscale hover:grayscale-0 transition-all"
             >
-              {partner}
+              <img src={`https://via.placeholder.com/150x50.png?text=${partner}`} alt={partner} />
             </div>
           ))}
         </div>

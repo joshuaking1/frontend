@@ -1,4 +1,5 @@
 // src/components/landing/Footer.tsx
+import Image from "next/image";
 
 export const Footer = () => {
   return (
@@ -7,6 +8,13 @@ export const Footer = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
           {/* Logo & Copyright */}
           <div className="space-y-3 sm:space-y-4 text-center sm:text-left md:col-span-1">
+            <Image
+              src="/learnbridge-logo.png"
+              alt="LearnBridge"
+              width={120}
+              height={32}
+              className="h-8 w-auto mx-auto sm:mx-0"
+            />
             <h3 className="font-serif text-xl sm:text-2xl">LearnBridgeEdu</h3>
             <p className="text-slate-300 text-sm sm:text-base">
               Transforming education in Ghana, one lesson at a time.

@@ -5,7 +5,7 @@ import { z } from 'zod';
 import Groq from 'groq-sdk';
 import { revalidatePath } from 'next/cache';
 
-const supabase = createClient();
+// Remove this line - we'll create supabase client in each function
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 // ######################################################################
@@ -18,6 +18,7 @@ const createCoTeacherSchema = z.object({
 });
 
 export async function createCoTeacher(prevState: any, formData: FormData) {
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated." };
 
@@ -53,6 +54,7 @@ export async function createCoTeacher(prevState: any, formData: FormData) {
 type Message = { role: 'user' | 'assistant'; content: string };
 
 export async function getCoTeacherResponse(history: Message[], userMessage: string, persona: string) {
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Not authenticated.", response: null };
 
@@ -136,7 +138,7 @@ ${contextText}
         if (!aiResponse) throw new Error("AI returned an empty response.");
 
         return { response: aiResponse, error: null };
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error("Co-Teacher Chat Error:", e);
         return { error: `I'm having trouble connecting right now: ${e.message}`, response: null };
     }

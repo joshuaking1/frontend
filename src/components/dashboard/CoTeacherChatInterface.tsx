@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Send, Bot, User, Loader2 } from "lucide-react";
-import { getChatResponse } from "@/app/dashboard/teacher/co-teacher/actions";
+import { getCoTeacherResponse } from "@/app/dashboard/teacher/co-teacher/actions";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import ReactMarkdown from "react-markdown";
 
@@ -55,9 +55,10 @@ export function CoTeacherChatInterface({
     setInput("");
     setIsLoading(true);
 
-    const result = await getChatResponse(
-      coTeacher.persona_description,
-      newHistory
+    const result = await getCoTeacherResponse(
+      newHistory,
+      input.trim(),
+      coTeacher.persona_description
     );
 
     if (result.response) {
@@ -108,40 +109,45 @@ export function CoTeacherChatInterface({
               }`}
             >
               {msg.role === "assistant" ? (
-                <ReactMarkdown
-                  className="prose prose-sm max-w-none"
-                  components={{
-                    p: ({ children }) => (
-                      <p className="mb-2 last:mb-0">{children}</p>
-                    ),
-                    strong: ({ children }) => (
-                      <strong className="font-semibold">{children}</strong>
-                    ),
-                    em: ({ children }) => (
-                      <em className="italic">{children}</em>
-                    ),
-                    ul: ({ children }) => (
-                      <ul className="list-disc list-inside mb-2">{children}</ul>
-                    ),
-                    ol: ({ children }) => (
-                      <ol className="list-decimal list-inside mb-2">
-                        {children}
-                      </ol>
-                    ),
-                    li: ({ children }) => <li className="mb-1">{children}</li>,
-                    h1: ({ children }) => (
-                      <h1 className="text-lg font-bold mb-2">{children}</h1>
-                    ),
-                    h2: ({ children }) => (
-                      <h2 className="text-base font-bold mb-2">{children}</h2>
-                    ),
-                    h3: ({ children }) => (
-                      <h3 className="text-sm font-bold mb-1">{children}</h3>
-                    ),
-                  }}
-                >
-                  {msg.content}
-                </ReactMarkdown>
+                <div className="prose prose-sm max-w-none">
+                  <ReactMarkdown
+                    components={{
+                      p: ({ children }) => (
+                        <p className="mb-2 last:mb-0">{children}</p>
+                      ),
+                      strong: ({ children }) => (
+                        <strong className="font-semibold">{children}</strong>
+                      ),
+                      em: ({ children }) => (
+                        <em className="italic">{children}</em>
+                      ),
+                      ul: ({ children }) => (
+                        <ul className="list-disc list-inside mb-2">
+                          {children}
+                        </ul>
+                      ),
+                      ol: ({ children }) => (
+                        <ol className="list-decimal list-inside mb-2">
+                          {children}
+                        </ol>
+                      ),
+                      li: ({ children }) => (
+                        <li className="mb-1">{children}</li>
+                      ),
+                      h1: ({ children }) => (
+                        <h1 className="text-lg font-bold mb-2">{children}</h1>
+                      ),
+                      h2: ({ children }) => (
+                        <h2 className="text-base font-bold mb-2">{children}</h2>
+                      ),
+                      h3: ({ children }) => (
+                        <h3 className="text-sm font-bold mb-1">{children}</h3>
+                      ),
+                    }}
+                  >
+                    {msg.content}
+                  </ReactMarkdown>
+                </div>
               ) : (
                 <p>{msg.content}</p>
               )}

@@ -16,17 +16,17 @@ const assessmentSchema = z.object({
   dokLevels: z.array(z.enum(['1', '2', '3', '4'])).min(1, "At least one DoK level is required."),
 });
 
-const systemPrompt = `You are an expert in educational assessment design for the Ghanaian SBC. Your primary task is to generate a quiz as a raw JSON object based on user specifications and, most importantly, the **provided authoritative context** from the official curriculum.
+const systemPrompt = `You are an expert in educational assessment design for the Ghanaian SBC. Your primary task is to generate a quiz as a raw JSON object based on user specifications and the **provided authoritative context** from the official curriculum.
 
 You MUST follow these rules:
-1.  **Prioritize the CONTEXT.** All questions, options, and answers must be directly derived from the provided curriculum text. Do not invent information.
+1.  **Prioritize the CONTEXT when available.** If sufficient curriculum context is provided, base questions directly on it. If context is limited but the topic is educationally valid, use your pedagogical knowledge to create appropriate questions aligned with the grade level and subject.
 2.  **You MUST ONLY respond with a valid, raw JSON object.** Do not include any explanatory text or markdown.
 3.  The JSON object must have this exact schema: { "title": "string", "questions": [ { "type": "'mcq' or 'short_answer'", "question": "string", "options": ["string"], "correctAnswer": "string" } ] }
 4.  For 'mcq' type, the 'options' array MUST contain exactly 4 distinct strings.
 5.  For 'mcq' type, the 'correctAnswer' MUST exactly match one of the strings in the 'options' array.
 6.  For 'short_answer' type, the 'options' field MUST be an empty array: [].
-7.  For 'short_answer' type, the 'correctAnswer' MUST be a concise, factual answer based on the context.
-8.  If the CONTEXT is insufficient, you must state this in the quiz title and generate no questions.`;
+7.  For 'short_answer' type, the 'correctAnswer' MUST be a concise, factual answer.
+8.  Only refuse to generate questions if the topic is completely inappropriate or nonsensical for the given grade level and subject.`;
 
 const exampleFormat = {
     "title": "Quiz on the Properties of Water",
@@ -86,8 +86,8 @@ export async function generateAssessment(prevState: any, formData: FormData) {
 
     const { data: chunks, error: matchError } = await supabase.rpc('match_sbc_chunks', {
       query_embedding: embeddingResponse.embedding,
-      match_threshold: 0.5, // Lowered from 0.7
-      match_count: 8 // Fetch more chunks for broader context
+      match_threshold: 0.3, // Further lowered to capture more potential matches
+      match_count: 10 // Fetch even more chunks for broader context
     });
     if (matchError) throw new Error(`Chunk Matching Error: ${matchError.message}`);
     
@@ -140,7 +140,7 @@ export async function generateAssessment(prevState: any, formData: FormData) {
     revalidatePath('/dashboard/teacher/resources'); // Revalidate the content hub
     return { quiz: { inputs, aiContent: quizData }, error: null };
 
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error("RAG Assessment Error:", e);
     return { error: { api: [`An error occurred: ${e.message}`] }, quiz: null };
   }

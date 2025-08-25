@@ -2,6 +2,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
@@ -60,7 +61,7 @@ const SidebarContent = ({ onLinkClick }: { onLinkClick?: () => void }) => {
       {/* Logo */}
       <div className="p-4 lg:p-6">
         <img
-          src="/logo.png"
+          src="/next.svg"
           alt="LearnBridge"
           className="h-auto w-auto max-w-full max-h-[60px]"
         />
