@@ -4,7 +4,36 @@ import { createClient } from "@/lib/supabase/server";
 import { z } from 'zod';
 import Groq from 'groq-sdk';
 
-const supabase = createClient();
+// --- START: SELF-CONTAINED EMBEDDING ENGINE ---
+const CF_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
+const CF_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
+const MODEL = '@cf/baai/bge-small-en-v1.5';
+const apiUrl = `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/ai/run/${MODEL}`;
+
+async function generateEmbedding(text: string): Promise<number[]> {
+  if (!CF_API_TOKEN || !CF_ACCOUNT_ID) {
+    throw new Error("Cloudflare credentials are not configured.");
+  }
+
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: { 
+      'Authorization': `Bearer ${CF_API_TOKEN}`, 
+      'Content-Type': 'application/json' 
+    },
+    body: JSON.stringify({ text: [text] }),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`Cloudflare AI Error: ${response.status} ${errorBody}`);
+  }
+
+  const result = await response.json();
+  return result.result.data[0];
+}
+// --- END: SELF-CONTAINED EMBEDDING ENGINE ---
+
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 // ######################################################################
@@ -71,6 +100,7 @@ export async function generateRubric(prevState: any, formData: FormData) {
     return { error: { validation: validation.error.flatten().fieldErrors }, data: null };
   }
 
+  const supabase = await createClient();
   const { data: userData, error: authError } = await supabase.auth.getUser();
 
   if (authError || !userData?.user) {
@@ -82,12 +112,13 @@ export async function generateRubric(prevState: any, formData: FormData) {
   const inputs = validation.data;
 
   try {
+    // --- RAG PIPELINE (RUNNING DIRECTLY IN THE SERVER ACTION) ---
+    // Step 1: Generate embedding using the reliable Cloudflare API call.
     const combinedQuery = `${inputs.subject} ${inputs.grade}: ${inputs.topic} - ${inputs.taskDescription}`;
-    const { data: embeddingResponse, error: embeddingError } = await supabase.functions.invoke('text-to-embedding', { body: { text: combinedQuery } });
-    if (embeddingError) throw new Error(`Embedding Error: ${embeddingError.message}`);
+    const queryEmbedding = await generateEmbedding(combinedQuery);
 
     const { data: chunks, error: matchError } = await supabase.rpc('match_sbc_chunks', {
-      query_embedding: embeddingResponse.embedding,
+      query_embedding: queryEmbedding,
       match_threshold: 0.75,
       match_count: 5
     });
@@ -113,7 +144,7 @@ export async function generateRubric(prevState: any, formData: FormData) {
     const rubricData = JSON.parse(aiResponse);
 
     const fullContentForEmbedding = `Rubric for ${inputs.topic}: ${JSON.stringify(rubricData)}`;
-    const { data: contentEmbedding } = await supabase.functions.invoke('text-to-embedding', { body: { text: fullContentForEmbedding } });
+    const contentEmbedding = await generateEmbedding(fullContentForEmbedding);
 
     await supabase.from('teacher_content').insert({
       owner_id: user.id,
@@ -121,7 +152,7 @@ export async function generateRubric(prevState: any, formData: FormData) {
       title: `Rubric: ${inputs.topic}`,
       subject: inputs.subject,
       structured_content: { inputs, aiContent: rubricData },
-      embedding: contentEmbedding.embedding
+      embedding: contentEmbedding
     });
 
     return { data: { inputs, aiContent: rubricData }, error: null };
@@ -207,6 +238,7 @@ export async function generateTos(prevState: any, formData: FormData) {
         return { error: { validation: validation.error.flatten().fieldErrors }, data: null };
     }
 
+    const supabase = await createClient();
     const { data: userData, error: authError } = await supabase.auth.getUser();
 
     if (authError || !userData?.user) {
@@ -219,11 +251,10 @@ export async function generateTos(prevState: any, formData: FormData) {
 
     try {
         const combinedQuery = `${inputs.subject} ${inputs.grade} ${inputs.topic} ${inputs.examTitle}`;
-        const { data: embeddingResponse, error: embeddingError } = await supabase.functions.invoke('text-to-embedding', { body: { text: combinedQuery } });
-        if (embeddingError) throw new Error(`Embedding Error: ${embeddingError.message}`);
+        const queryEmbedding = await generateEmbedding(combinedQuery);
 
         const { data: chunks, error: matchError } = await supabase.rpc('match_sbc_chunks', {
-            query_embedding: embeddingResponse.embedding,
+            query_embedding: queryEmbedding,
             match_threshold: 0.75,
             match_count: 8 
         });
@@ -249,7 +280,7 @@ export async function generateTos(prevState: any, formData: FormData) {
         const tosData = JSON.parse(aiResponse);
 
         const fullContentForEmbedding = `TOS for ${inputs.examTitle}: ${JSON.stringify(tosData)}`;
-        const { data: contentEmbedding } = await supabase.functions.invoke('text-to-embedding', { body: { text: fullContentForEmbedding } });
+        const contentEmbedding = await generateEmbedding(fullContentForEmbedding);
 
         await supabase.from('teacher_content').insert({
             owner_id: user.id,
@@ -257,7 +288,7 @@ export async function generateTos(prevState: any, formData: FormData) {
             title: `TOS: ${inputs.examTitle}`,
             subject: inputs.subject,
             structured_content: { inputs, aiContent: tosData },
-            embedding: contentEmbedding.embedding
+            embedding: contentEmbedding
         });
 
         return { data: { inputs, aiContent: tosData }, error: null };
@@ -275,6 +306,7 @@ export async function generateTos(prevState: any, formData: FormData) {
 const refinementSystemPrompt = `You are an expert curriculum editor. Your task is to take an existing piece of educational content (in JSON format) and refine it based on a teacher's specific request and relevant curriculum context. You MUST maintain the original JSON structure. You MUST ONLY respond with the complete, updated, valid, raw JSON object. Do not add any explanatory text or markdown.`;
 
 export async function refineContentWithAI(contentId: number, originalContent: any, refinementPrompt: string) {
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
         throw new Error("Not authenticated.");
@@ -285,11 +317,10 @@ export async function refineContentWithAI(contentId: number, originalContent: an
 
     try {
         const combinedQuery = `Refine content on topic '${originalContent.inputs.topic}' with this instruction: '${refinementPrompt}'`;
-        const { data: embeddingResponse, error: embeddingError } = await supabase.functions.invoke('text-to-embedding', { body: { text: combinedQuery } });
-        if (embeddingError) throw new Error(`Embedding Error: ${embeddingError.message}`);
+        const queryEmbedding = await generateEmbedding(combinedQuery);
 
         const { data: chunks, error: matchError } = await supabase.rpc('match_sbc_chunks', {
-            query_embedding: embeddingResponse.embedding,
+            query_embedding: queryEmbedding,
             match_threshold: 0.78,
             match_count: 6
         });
@@ -331,13 +362,13 @@ export async function refineContentWithAI(contentId: number, originalContent: an
         const refinedAiContent = JSON.parse(aiResponse);
 
         const fullContentForEmbedding = `Refined Content on ${originalContent.inputs.topic}: ${JSON.stringify(refinedAiContent)}`;
-        const { data: contentEmbedding } = await supabase.functions.invoke('text-to-embedding', { body: { text: fullContentForEmbedding } });
+        const contentEmbedding = await generateEmbedding(fullContentForEmbedding);
 
         const { data, error } = await supabase
             .from('teacher_content')
             .update({
                 structured_content: { ...originalContent, aiContent: refinedAiContent },
-                embedding: contentEmbedding.embedding,
+                embedding: contentEmbedding,
                 updated_at: new Date().toISOString(),
             })
             .eq('id', contentId)

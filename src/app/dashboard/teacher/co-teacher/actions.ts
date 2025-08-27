@@ -5,7 +5,36 @@ import { z } from 'zod';
 import Groq from 'groq-sdk';
 import { revalidatePath } from 'next/cache';
 
-// Remove this line - we'll create supabase client in each function
+// --- START: SELF-CONTAINED EMBEDDING ENGINE ---
+const CF_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
+const CF_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
+const MODEL = '@cf/baai/bge-small-en-v1.5';
+const apiUrl = `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/ai/run/${MODEL}`;
+
+async function generateEmbedding(text: string): Promise<number[]> {
+  if (!CF_API_TOKEN || !CF_ACCOUNT_ID) {
+    throw new Error("Cloudflare credentials are not configured.");
+  }
+
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: { 
+      'Authorization': `Bearer ${CF_API_TOKEN}`, 
+      'Content-Type': 'application/json' 
+    },
+    body: JSON.stringify({ text: [text] }),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`Cloudflare AI Error: ${response.status} ${errorBody}`);
+  }
+
+  const result = await response.json();
+  return result.result.data[0];
+}
+// --- END: SELF-CONTAINED EMBEDDING ENGINE ---
+
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 // ######################################################################
@@ -59,10 +88,9 @@ export async function getCoTeacherResponse(history: Message[], userMessage: stri
     if (!user) return { error: "Not authenticated.", response: null };
 
     try {
-        // --- RAG Pipeline ---
-        const { data: embeddingResponse, error: embeddingError } = await supabase.functions.invoke('text-to-embedding', { body: { text: userMessage } });
-        if (embeddingError) throw new Error(`Embedding Error: ${embeddingError.message}`);
-        const queryEmbedding = embeddingResponse.embedding;
+        // --- RAG PIPELINE (RUNNING DIRECTLY IN THE SERVER ACTION) ---
+        // Step 1: Generate embedding using the reliable Cloudflare API call.
+        const queryEmbedding = await generateEmbedding(userMessage);
 
         const [sbcChunksResult, teacherContentResult] = await Promise.all([
             supabase.rpc('match_sbc_chunks', {

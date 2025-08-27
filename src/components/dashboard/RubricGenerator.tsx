@@ -70,22 +70,38 @@ function RubricDisplay({ rubric }: { rubric: any }) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-4">
                     <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                      <h4 className="font-semibold text-green-800 mb-2">4 - Excellent</h4>
-                      <p className="text-sm text-green-700">{crit.levels.excellent}</p>
+                      <h4 className="font-semibold text-green-800 mb-2">
+                        4 - Excellent
+                      </h4>
+                      <p className="text-sm text-green-700">
+                        {crit.levels.excellent}
+                      </p>
                     </div>
                     <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                      <h4 className="font-semibold text-blue-800 mb-2">3 - Proficient</h4>
-                      <p className="text-sm text-blue-700">{crit.levels.proficient}</p>
+                      <h4 className="font-semibold text-blue-800 mb-2">
+                        3 - Proficient
+                      </h4>
+                      <p className="text-sm text-blue-700">
+                        {crit.levels.proficient}
+                      </p>
                     </div>
                   </div>
                   <div className="space-y-4">
                     <div className="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                      <h4 className="font-semibold text-yellow-800 mb-2">2 - Developing</h4>
-                      <p className="text-sm text-yellow-700">{crit.levels.developing}</p>
+                      <h4 className="font-semibold text-yellow-800 mb-2">
+                        2 - Developing
+                      </h4>
+                      <p className="text-sm text-yellow-700">
+                        {crit.levels.developing}
+                      </p>
                     </div>
                     <div className="p-3 bg-red-50 rounded-lg border border-red-200">
-                      <h4 className="font-semibold text-red-800 mb-2">1 - Emerging</h4>
-                      <p className="text-sm text-red-700">{crit.levels.emerging}</p>
+                      <h4 className="font-semibold text-red-800 mb-2">
+                        1 - Emerging
+                      </h4>
+                      <p className="text-sm text-red-700">
+                        {crit.levels.emerging}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -163,8 +179,8 @@ export function RubricGenerator() {
             <ul className="list-disc pl-5">
               {Object.entries(state.error.validation).map(([key, errors]) => (
                 <li key={key}>
-                  <span className="font-semibold capitalize">{key}:</span>{' '}
-                  {errors.join(', ')}
+                  <span className="font-semibold capitalize">{key}:</span>{" "}
+                  {Array.isArray(errors) ? errors.join(", ") : String(errors)}
                 </li>
               ))}
             </ul>
@@ -173,11 +189,13 @@ export function RubricGenerator() {
 
         {state?.error?.api && (
           <p className="text-red-600 font-semibold mt-4 bg-red-50 p-3 rounded-md">
-            {state.error.api.join(', ')}
+            {state.error.api.join(", ")}
           </p>
         )}
 
-        {state?.data?.aiContent && <RubricDisplay rubric={state.data.aiContent} />}
+        {state?.data?.aiContent && (
+          <RubricDisplay rubric={state.data.aiContent} />
+        )}
       </CardContent>
     </Card>
   );

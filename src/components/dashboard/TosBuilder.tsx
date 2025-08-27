@@ -48,17 +48,22 @@ function SubmitButton() {
 }
 
 function TosDisplay({ tos }: { tos: any }) {
-  if (!tos || !tos.specifications) return null;
+  if (!tos || !tos.breakdown) return null;
 
-  const totalQuestions = tos.specifications.reduce(
-    (sum: number, item: any) => sum + item.totalQuestions,
+  const totalQuestions = tos.breakdown.reduce(
+    (sum: number, item: any) => sum + item.numberOfQuestions,
     0
   );
-  const cognitiveTotals = tos.cognitiveLevels.map((level: string) =>
-    tos.specifications.reduce(
-      (sum: number, item: any) => sum + item.breakdown[level.toLowerCase()],
-      0
-    )
+
+  // Extract unique cognitive levels from the breakdown
+  const cognitiveLevels = [
+    ...new Set(tos.breakdown.map((item: any) => item.cognitiveLevel)),
+  ];
+
+  const cognitiveTotals = cognitiveLevels.map((level: string) =>
+    tos.breakdown
+      .filter((item: any) => item.cognitiveLevel === level)
+      .reduce((sum: number, item: any) => sum + item.numberOfQuestions, 0)
   );
 
   return (
@@ -100,7 +105,7 @@ function TosDisplay({ tos }: { tos: any }) {
                 </TableHead>
               </TableRow>
               <TableRow className="bg-slate-50 hover:bg-slate-100">
-                {tos.cognitiveLevels.map((level: string) => (
+                {cognitiveLevels.map((level: string) => (
                   <TableHead
                     key={level}
                     className="text-center font-semibold border-l"
@@ -111,21 +116,23 @@ function TosDisplay({ tos }: { tos: any }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {tos.specifications.map((spec: any) => (
-                <TableRow key={spec.topic} className="border-b">
+              {tos.breakdown.map((item: any, index: number) => (
+                <TableRow key={index} className="border-b">
                   <TableCell className="font-medium text-slate-800">
-                    {spec.topic}
+                    {item.subTopic}
                   </TableCell>
-                  {tos.cognitiveLevels.map((level: string) => (
+                  {cognitiveLevels.map((level: string) => (
                     <TableCell key={level} className="text-center border-l">
-                      {spec.breakdown[level.toLowerCase()]}
+                      {item.cognitiveLevel === level
+                        ? item.numberOfQuestions
+                        : 0}
                     </TableCell>
                   ))}
                   <TableCell className="text-center font-bold border-l">
-                    {spec.totalQuestions}
+                    {item.numberOfQuestions}
                   </TableCell>
                   <TableCell className="text-center font-bold border-l">
-                    {spec.totalMarks}
+                    {item.totalMarks}
                   </TableCell>
                 </TableRow>
               ))}
@@ -195,23 +202,42 @@ export function TosBuilder() {
               />
             </div>
           </div>
-          <div>
-            <Label htmlFor="subject" className="font-semibold">
-              Subject
-            </Label>
-            <Input
-              id="subject"
-              name="subject"
-              placeholder="e.g., Art and Design"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="subject" className="font-semibold">
+                Subject
+              </Label>
+              <Input
+                id="subject"
+                name="subject"
+                placeholder="e.g., Art and Design"
+              />
+            </div>
+            <div>
+              <Label htmlFor="grade" className="font-semibold">
+                Grade/Class
+              </Label>
+              <Input id="grade" name="grade" placeholder="e.g., JHS 2" />
+            </div>
+            <div>
+              <Label htmlFor="totalQuestions" className="font-semibold">
+                Total Questions
+              </Label>
+              <Input
+                id="totalQuestions"
+                name="totalQuestions"
+                type="number"
+                placeholder="e.g., 50"
+              />
+            </div>
           </div>
           <div>
-            <Label htmlFor="strandsCovered" className="font-semibold">
-              Strands & Sub-Strands Covered
+            <Label htmlFor="topic" className="font-semibold">
+              Main Topic/Strands Covered
             </Label>
             <Textarea
-              id="strandsCovered"
-              name="strandsCovered"
+              id="topic"
+              name="topic"
               placeholder="List all the strands and sub-strands covered during the term. Be as detailed as possible for the best results..."
               rows={5}
             />
@@ -221,13 +247,27 @@ export function TosBuilder() {
           </div>
         </form>
 
-        {state.tos && <TosDisplay tos={state.tos} />}
+        {state?.error?.validation && (
+          <div className="mt-4 space-y-2 text-sm text-red-600 bg-red-50 p-3 rounded-md">
+            <p className="font-semibold">Please fix the following errors:</p>
+            <ul className="list-disc pl-5">
+              {Object.entries(state.error.validation).map(([key, errors]) => (
+                <li key={key}>
+                  <span className="font-semibold capitalize">{key}:</span>{" "}
+                  {Array.isArray(errors) ? errors.join(", ") : String(errors)}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
-        {state.error && (
+        {state?.error?.api && (
           <p className="text-red-600 font-semibold mt-4 bg-red-50 p-3 rounded-md">
-            {state.error}
+            {state.error.api.join(", ")}
           </p>
         )}
+
+        {state?.data?.aiContent && <TosDisplay tos={state.data.aiContent} />}
       </CardContent>
     </Card>
   );

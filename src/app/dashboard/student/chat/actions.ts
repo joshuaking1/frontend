@@ -5,6 +5,36 @@ import Groq from 'groq-sdk';
 import { revalidatePath } from "next/cache";
 import { processTextForKnowledgeGraph } from '../notes/actions'; // Import the new action
 
+// --- START: SELF-CONTAINED EMBEDDING ENGINE ---
+const CF_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
+const CF_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
+const MODEL = '@cf/baai/bge-small-en-v1.5';
+const apiUrl = `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/ai/run/${MODEL}`;
+
+async function generateEmbedding(text: string): Promise<number[]> {
+  if (!CF_API_TOKEN || !CF_ACCOUNT_ID) {
+    throw new Error("Cloudflare credentials are not configured.");
+  }
+
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: { 
+      'Authorization': `Bearer ${CF_API_TOKEN}`, 
+      'Content-Type': 'application/json' 
+    },
+    body: JSON.stringify({ text: [text] }),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`Cloudflare AI Error: ${response.status} ${errorBody}`);
+  }
+
+  const result = await response.json();
+  return result.result.data[0];
+}
+// --- END: SELF-CONTAINED EMBEDDING ENGINE ---
+
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 const chatSystemPrompt = `
@@ -20,9 +50,9 @@ export async function getOdenehoChatResponse(sessionId: string, userMessage: str
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Not authenticated" };
 
-    // --- RAG Pipeline ---
-    const { data: embeddingResponse } = await supabase.functions.invoke('text-to-embedding', { body: { text: userMessage } });
-    const { data: chunks } = await supabase.rpc('match_sbc_chunks', { query_embedding: embeddingResponse.embedding, match_threshold: 0.7, match_count: 5 });
+    // --- RAG Pipeline using Cloudflare AI ---
+    const queryEmbedding = await generateEmbedding(userMessage);
+    const { data: chunks } = await supabase.rpc('match_sbc_chunks', { query_embedding: queryEmbedding, match_threshold: 0.7, match_count: 5 });
     const contextText = chunks && chunks.length > 0 ? "Context from the Ghanaian SBC Curriculum:\n" + chunks.map((c: any) => c.content).join('\n---\n') : "No specific curriculum context was found.";
     // --- End RAG ---
 
