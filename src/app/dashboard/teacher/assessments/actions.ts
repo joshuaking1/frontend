@@ -56,6 +56,7 @@ const assessmentSchema = z.object({
   dok2Questions: z.coerce.number().int().min(0).max(20).optional(),
   dok3Questions: z.coerce.number().int().min(0).max(20).optional(),
   dok4Questions: z.coerce.number().int().min(0).max(20).optional(),
+  useRawSearch: z.string().optional().nullable(),
 }).refine((data) => {
   // Ensure that if a DOK level is selected, the corresponding question count is greater than 0
   const dokLevels = data.dokLevels || [];
@@ -127,11 +128,14 @@ export async function generateAssessment(prevState: any, formData: FormData) {
     dok2Questions: formData.get('dok2Questions') || '0',
     dok3Questions: formData.get('dok3Questions') || '0',
     dok4Questions: formData.get('dok4Questions') || '0',
+    useRawSearch: formData.get('useRawSearch'),
   };
 
   const validation = assessmentSchema.safeParse(rawData);
 
   if (!validation.success) {
+    console.error("Validation errors:", validation.error.flatten().fieldErrors);
+    console.error("Raw data:", rawData);
     return { error: validation.error.flatten().fieldErrors, quiz: null };
   }
 
@@ -140,7 +144,7 @@ export async function generateAssessment(prevState: any, formData: FormData) {
     return { error: { api: ["Not authenticated."] }, quiz: null };
   }
 
-  const inputs = validation.data;
+  const { useRawSearch, ...inputs } = validation.data;
   inputs.topic = inputs.topic.trim();
 
   // Calculate total questions from DOK level distribution
@@ -156,32 +160,41 @@ export async function generateAssessment(prevState: any, formData: FormData) {
   
 
   try {
-    // --- RAG PIPELINE (RUNNING DIRECTLY IN THE SERVER ACTION) ---
-    // Step 1: Generate embedding using the reliable Cloudflare API call.
-    const queryEmbedding = await generateEmbedding(inputs.topic);
+    let contextText = "No specific curriculum context was found.";
 
-    // Step 2: Match chunks.
-    const { data: chunks, error: matchError } = await supabase.rpc('match_sbc_chunks', {
-      query_embedding: queryEmbedding,
-      match_threshold: 0.7,
-      match_count: 5
-    });
+    // THE EMERGENCY OVERRIDE
+    if (useRawSearch) {
+      contextText = `The user has requested a raw search. Generate the assessment based on your general knowledge of the topic: "${inputs.topic}"`;
+    } else {
+      // Run the full RAG pipeline as before
+      // Step 1: Generate embedding using the reliable Cloudflare API call.
+      const queryEmbedding = await generateEmbedding(inputs.topic);
 
-    if (matchError) throw new Error(`Chunk Matching Error: ${matchError.message}`);
+      // Step 2: Match chunks.
+      const { data: chunks, error: matchError } = await supabase.rpc('match_sbc_chunks', {
+        query_embedding: queryEmbedding,
+        match_threshold: 0.7,
+        match_count: 5,
+        raw_query_text: inputs.topic // THE CRITICAL ADDITION
+      });
 
-    if (!chunks || chunks.length === 0) {
-      const { data: suggestedTopics } = await supabase.rpc('fuzzy_find_topics', { search_term: inputs.topic });
-      return { 
-        error: { 
-          code: 'NO_CONTEXT_FOUND',
-          message: `The system could not find enough information for "${inputs.topic}".`,
-          suggestions: suggestedTopics || [] 
-        }, 
-        quiz: null 
-      };
+      if (matchError) throw new Error(`Chunk Matching Error: ${matchError.message}`);
+
+      if (!chunks || chunks.length === 0) {
+        // Fallback to fuzzy search as before
+        const { data: suggestedTopics } = await supabase.rpc('fuzzy_find_topics', { search_term: inputs.topic });
+        return { 
+          error: { 
+            code: 'NO_CONTEXT_FOUND',
+            message: `The system could not find enough information for "${inputs.topic}".`,
+            suggestions: suggestedTopics || [] 
+          }, 
+          quiz: null 
+        };
+      }
+
+      contextText = chunks.map((chunk: any) => chunk.content).join("\n\n---\n\n");
     }
-
-    const contextText = chunks.map((chunk: any) => chunk.content).join("\n\n---\n\n");
 
     // Build DOK distribution details for the prompt
     const dokDistribution = Object.entries(dokQuestionCounts)

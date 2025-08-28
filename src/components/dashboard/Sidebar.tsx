@@ -60,11 +60,7 @@ const SidebarContent = ({ onLinkClick }: { onLinkClick?: () => void }) => {
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="p-4 lg:p-6">
-        <img
-          src="/next.svg"
-          alt="LearnBridge"
-          className="h-auto w-auto max-w-full max-h-[60px]"
-        />
+        <div className="text-white font-bold text-xl">LearnBridge</div>
       </div>
 
       {/* Navigation */}

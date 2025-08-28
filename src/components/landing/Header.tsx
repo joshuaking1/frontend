@@ -22,13 +22,10 @@ export const Header = () => {
       <div className="container mx-auto flex justify-between items-center">
         {/* Logo */}
         <div className="flex items-center space-x-2">
-          <Image
-            src="/learnbridge-logo.png"
+          <img
+            src="/logo-simple.svg"
             alt="LearnBridge"
-            width={180}
-            height={50}
             className="h-auto w-auto max-w-[180px] max-h-[50px]"
-            priority
           />
         </div>
 

@@ -8,11 +8,9 @@ export const Footer = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
           {/* Logo & Copyright */}
           <div className="space-y-3 sm:space-y-4 text-center sm:text-left md:col-span-1">
-            <Image
-              src="/learnbridge-logo.png"
+            <img
+              src="/logo-simple.svg"
               alt="LearnBridge"
-              width={120}
-              height={32}
               className="h-8 w-auto mx-auto sm:mx-0"
             />
             <h3 className="font-serif text-xl sm:text-2xl">LearnBridgeEdu</h3>
