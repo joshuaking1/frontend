@@ -60,7 +60,11 @@ const SidebarContent = ({ onLinkClick }: { onLinkClick?: () => void }) => {
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="p-4 lg:p-6">
-        <div className="text-white font-bold text-xl">LearnBridge</div>
+        <Link href="/dashboard/teacher">
+          <div className="font-bold text-xl">
+          <span className="text-orange-500">Learn</span><span className="text-blue-500">Bridg</span><span className="text-white">Edu</span>
+        </div>
+        </Link>
       </div>
 
       {/* Navigation */}
@@ -134,7 +138,7 @@ export const Sidebar = () => {
         <SidebarContent />
       </aside>
 
-      {/* Mobile Sidebar Sheet - Hidden by default, shows when hamburger is clicked */}
+      {/* Mobile Sidebar Sheet */}
       <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
         <SheetContent
           side="left"

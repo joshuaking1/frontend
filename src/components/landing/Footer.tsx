@@ -8,12 +8,16 @@ export const Footer = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
           {/* Logo & Copyright */}
           <div className="space-y-3 sm:space-y-4 text-center sm:text-left md:col-span-1">
-            <img
-              src="/logo-simple.svg"
+            <Image
+              src="/learnbridge-logo-clean.png"
               alt="LearnBridge"
+              width={120}
+              height={32}
               className="h-8 w-auto mx-auto sm:mx-0"
             />
-            <h3 className="font-serif text-xl sm:text-2xl">LearnBridgeEdu</h3>
+            <div className="font-bold text-xl">
+              <span className="text-orange-500">Learn</span><span className="text-blue-500">Bridg</span><span className="text-white">Edu</span>
+            </div>
             <p className="text-slate-300 text-sm sm:text-base">
               Transforming education in Ghana, one lesson at a time.
             </p>

@@ -2,7 +2,7 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, X } from "lucide-react";
+import { Menu } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
@@ -22,11 +22,9 @@ export const Header = () => {
       <div className="container mx-auto flex justify-between items-center">
         {/* Logo */}
         <div className="flex items-center space-x-2">
-          <img
-            src="/logo-simple.svg"
-            alt="LearnBridge"
-            className="h-auto w-auto max-w-[180px] max-h-[50px]"
-          />
+          <div className="font-bold text-xl">
+            <span className="text-orange-500">Learn</span><span className="text-blue-500">Bridg</span><span className="text-white">Edu</span>
+          </div>
         </div>
 
         {/* Desktop Navigation */}
@@ -61,13 +59,9 @@ export const Header = () => {
           <SheetContent side="right" className="w-[300px] sm:w-[400px]">
             <div className="flex flex-col space-y-6 mt-6">
               <div className="flex items-center justify-between">
-                <Image
-                  src="/learnbridge-logo.png"
-                  alt="LearnBridge"
-                  width={150}
-                  height={40}
-                  className="h-auto w-auto max-w-[150px] max-h-[40px]"
-                />
+                <div className="font-bold text-xl">
+                  <span className="text-orange-500">Learn</span><span className="text-blue-500">Bridg</span><span className="text-white">Edu</span>
+                </div>
               </div>
 
               <nav className="flex flex-col space-y-4">
