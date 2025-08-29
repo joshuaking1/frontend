@@ -135,20 +135,33 @@ export async function generateLessonPlan(prevState: any, formData: FormData) {
   const inputs = validation.data;
 
   try {
-    // --- RAG PIPELINE (RUNNING DIRECTLY IN THE SERVER ACTION) ---
-    // Step 1: Generate embedding using the reliable Cloudflare API call.
-    const combinedQuery = `${inputs.subject} ${inputs.grade} ${inputs.strand} ${inputs.subStrand} ${inputs.topic}`;
-    const queryEmbedding = await generateEmbedding(combinedQuery);
+    // --- RAG PIPELINE ---
+    const combinedQuery = `${inputs.subject} ${inputs.topic}`;
+
+    // Step 1: Generate embedding using Supabase function
+    const { data: embeddingResponse } = await supabase.functions.invoke('text-to-embedding', { 
+      body: { text: combinedQuery } 
+    });
+
+    if (!embeddingResponse || !embeddingResponse.embedding) {
+      throw new Error("Embedding failed.");
+    }
 
     // Step 2: Match Relevant Chunks from the database
     const { data: chunks, error: matchError } = await supabase.rpc('match_sbc_chunks', {
-      query_embedding: queryEmbedding,
-      match_threshold: 0.75,
-      match_count: 5 // Get top 5 most relevant chunks
+      query_embedding: embeddingResponse.embedding,
+      match_threshold: 0.1, // Lower threshold for text search
+      match_count: 5,
+      raw_query_text: combinedQuery // PASS THE RAW TEXT
     });
-    if (matchError) throw new Error(`Chunk Matching Error: ${matchError.message}`);
+
+    if (matchError) {
+      throw new Error(`Chunk Matching Error: ${matchError.message}`);
+    }
     
-    const contextText = chunks && chunks.length > 0 ? chunks.map((chunk: any) => chunk.content).join("\n\n---\n\n") : "No specific curriculum context was found. Please proceed with general pedagogical knowledge.";
+    const contextText = chunks && chunks.length > 0 
+      ? chunks.map((chunk: any) => chunk.content).join("\n---\n") 
+      : "No specific curriculum context found.";
     // --- End RAG ---
 
     // --- AI Generation Step ---
@@ -200,7 +213,7 @@ export async function generateLessonPlan(prevState: any, formData: FormData) {
     revalidatePath('/dashboard/teacher/resources'); // Revalidate the content hub to show the new item
     return { planData: { inputs, aiContent: planData }, error: null };
 
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error("RAG Lesson Plan Error:", e);
     return { error: { api: [`An error occurred: ${e.message}`] }, planData: null };
   }

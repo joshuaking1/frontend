@@ -166,19 +166,25 @@ export async function generateAssessment(prevState: any, formData: FormData) {
     if (useRawSearch) {
       contextText = `The user has requested a raw search. Generate the assessment based on your general knowledge of the topic: "${inputs.topic}"`;
     } else {
-      // Run the full RAG pipeline as before
-      // Step 1: Generate embedding using the reliable Cloudflare API call.
-      const queryEmbedding = await generateEmbedding(inputs.topic);
-
-      // Step 2: Match chunks.
-      const { data: chunks, error: matchError } = await supabase.rpc('match_sbc_chunks', {
-        query_embedding: queryEmbedding,
-        match_threshold: 0.7,
-        match_count: 5,
-        raw_query_text: inputs.topic // THE CRITICAL ADDITION
+      // RAG PIPELINE
+      const { data: embeddingResponse } = await supabase.functions.invoke('text-to-embedding', { 
+        body: { text: inputs.topic } 
       });
 
-      if (matchError) throw new Error(`Chunk Matching Error: ${matchError.message}`);
+      if (!embeddingResponse || !embeddingResponse.embedding) {
+        throw new Error("Embedding failed.");
+      }
+
+      const { data: chunks, error: matchError } = await supabase.rpc('match_sbc_chunks', {
+        query_embedding: embeddingResponse.embedding,
+        match_threshold: 0.1,
+        match_count: 5,
+        raw_query_text: inputs.topic // PASS THE RAW TEXT
+      });
+
+      if (matchError) {
+        throw new Error(`Chunk Matching Error: ${matchError.message}`);
+      }
 
       if (!chunks || chunks.length === 0) {
         // Fallback to fuzzy search as before
@@ -193,7 +199,7 @@ export async function generateAssessment(prevState: any, formData: FormData) {
         };
       }
 
-      contextText = chunks.map((chunk: any) => chunk.content).join("\n\n---\n\n");
+      contextText = chunks.map((chunk: any) => chunk.content).join("\n---\n");
     }
 
     // Build DOK distribution details for the prompt
@@ -259,7 +265,7 @@ export async function generateAssessment(prevState: any, formData: FormData) {
     revalidatePath('/dashboard/teacher/resources'); // Revalidate the content hub
     return { quiz: { inputs, aiContent: quizData }, error: null };
 
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error("Monolithic Assessment Error:", e);
     return { error: { api: [e.message] }, quiz: null };
   }
