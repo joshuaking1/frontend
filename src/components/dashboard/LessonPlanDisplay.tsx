@@ -1,5 +1,7 @@
 // src/components/dashboard/LessonPlanDisplay.tsx
 
+import { ExportButton } from "./ExportButton";
+
 // Define types for the data we expect
 type PlanInputs = {
   subject: string;
@@ -253,6 +255,11 @@ export const LessonPlanDisplay = ({ planData }: LessonPlanDisplayProps) => {
               </tr>
             </tbody>
           </table>
+        </div>
+
+        {/* Export Button */}
+        <div className="mt-6 flex justify-center">
+          <ExportButton planData={planData} />
         </div>
       </div>
     </div>
