@@ -67,9 +67,15 @@ export async function ingestSBCDocument(prevState: ActionState, formData: FormDa
   const { data: newDocument, error: dbError } = await supabase
     .from('sbc_curriculum_documents')
     .insert({
-      uploader_id: user.id, subject, grade_level: grade,
-      file_name: file.name, file_path: filePath,
-      raw_text: parsedText, status: 'pending'
+      uploader_id: user.id, 
+      title: `${subject} - ${grade}`, // Generate title from subject and grade
+      subject, 
+      grade_level: grade,
+      file_name: file.name, 
+      file_path: filePath,
+      raw_text: parsedText, 
+      content: parsedText, // Use parsed text as content
+      status: 'pending'
     })
     .select('id')
     .single();
