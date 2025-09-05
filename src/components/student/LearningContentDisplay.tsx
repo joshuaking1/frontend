@@ -18,6 +18,7 @@ import {
   RefreshCw
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { VideoSection } from "./VideoSection";
 
 interface LearningContent {
   title: string;
@@ -145,6 +146,9 @@ export const LearningContentDisplay = ({
           </ul>
         </CardContent>
       </Card>
+
+      {/* Video Section */}
+      <VideoSection topic={content.title} />
 
       {/* Action Buttons */}
       <div className="flex justify-between items-center">
