@@ -1,7 +1,8 @@
 // frontend/src/components/dashboard/TosBuilder.tsx
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { generateTos } from "@/app/dashboard/teacher/advanced-tools/actions";
 import {
   Card,
@@ -230,7 +231,7 @@ function TosDisplay({ tos }: { tos: any }) {
 }
 
 export function TosBuilder() {
-  const [state, formAction] = useFormState(generateTos, {
+  const [state, formAction] = useActionState(generateTos, {
     tos: null,
     error: null,
   });

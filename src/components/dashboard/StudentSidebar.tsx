@@ -97,14 +97,17 @@ const navGroups = [
   },
 ];
 
-export const StudentSidebar = ({
+// Sidebar content component (shared between mobile and desktop)
+const SidebarContent = ({
   userName,
   avatarUrl,
   userId,
+  onLinkClick,
 }: {
   userName: string;
   avatarUrl?: string;
   userId: string;
+  onLinkClick?: () => void;
 }) => {
   const pathname = usePathname();
   const fallbackInitial = userName ? userName.charAt(0).toUpperCase() : "U";
@@ -121,16 +124,18 @@ export const StudentSidebar = ({
   };
 
   return (
-    <aside className="w-72 h-screen flex flex-col bg-white border-r fixed">
-      <div className="p-4 border-b">
-        <Link href="/dashboard/student">
+    <div className="flex flex-col h-full">
+      {/* Logo */}
+      <div className="p-4 lg:p-6 border-b">
+        <Link href="/dashboard/student" onClick={onLinkClick}>
           <span className="font-serif text-2xl font-bold text-brand-blue">
             LearnBridgeEdu
           </span>
         </Link>
       </div>
 
-      <div className="p-4 flex items-center space-x-4 border-b">
+      {/* User Profile */}
+      <div className="p-4 lg:p-6 flex items-center space-x-4 border-b">
         <Avatar className="h-12 w-12">
           <AvatarImage src={avatarUrl} alt={userName} />
           <AvatarFallback className="bg-brand-orange text-white text-xl">
@@ -142,12 +147,14 @@ export const StudentSidebar = ({
           <Link
             href={`/dashboard/profile/${userId}`}
             className="text-sm text-slate-500 hover:underline"
+            onClick={onLinkClick}
           >
             View Profile
           </Link>
         </div>
       </div>
 
+      {/* Navigation */}
       <ScrollArea className="flex-grow">
         <Accordion
           type="single"
@@ -168,7 +175,7 @@ export const StudentSidebar = ({
                 <ul className="space-y-1 pl-2">
                   {group.items.map((item) => (
                     <li key={item.href}>
-                      <Link href={item.href}>
+                      <Link href={item.href} onClick={onLinkClick}>
                         <div
                           className={`flex items-center space-x-3 p-2 rounded-md cursor-pointer transition-colors font-semibold ${
                             pathname.startsWith(item.href)
@@ -189,17 +196,83 @@ export const StudentSidebar = ({
         </Accordion>
       </ScrollArea>
 
-      <div className="p-4 border-t">
+      {/* Sign Out */}
+      <div className="p-4 lg:p-6 border-t">
         <form action={signOut}>
           <button
             type="submit"
             className="w-full flex items-center space-x-3 p-3 rounded-lg text-left text-slate-600 hover:bg-slate-100 transition-colors font-semibold"
+            onClick={onLinkClick}
           >
             <LogOut className="h-5 w-5" />
             <span>Sign Out</span>
           </button>
         </form>
       </div>
-    </aside>
+    </div>
+  );
+};
+
+// Floating hamburger menu button for mobile
+const FloatingMenuButton = ({
+  onMenuClick,
+}: {
+  onMenuClick: () => void;
+}) => {
+  return (
+    <Button
+      variant="default"
+      size="sm"
+      onClick={onMenuClick}
+      className="lg:hidden fixed top-4 left-4 z-50 bg-brand-blue hover:bg-brand-blue/90 text-white shadow-lg rounded-full p-3"
+      aria-label="Open menu"
+    >
+      <Menu className="h-5 w-5" />
+    </Button>
+  );
+};
+
+export const StudentSidebar = ({
+  userName,
+  avatarUrl,
+  userId,
+}: {
+  userName: string;
+  avatarUrl?: string;
+  userId: string;
+}) => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const closeMobileMenu = () => setIsMobileMenuOpen(false);
+
+  return (
+    <>
+      {/* Floating Hamburger Button - Only visible on mobile/tablet */}
+      <FloatingMenuButton onMenuClick={() => setIsMobileMenuOpen(true)} />
+
+      {/* Desktop Sidebar - Only visible on large screens */}
+      <aside className="hidden lg:flex lg:flex-col lg:w-72 lg:fixed lg:inset-y-0 lg:z-40 bg-white border-r shadow-lg">
+        <SidebarContent
+          userName={userName}
+          avatarUrl={avatarUrl}
+          userId={userId}
+        />
+      </aside>
+
+      {/* Mobile Sidebar Sheet */}
+      <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+        <SheetContent
+          side="left"
+          className="w-72 p-0 bg-white border-r-0 shadow-xl"
+        >
+          <SidebarContent
+            userName={userName}
+            avatarUrl={avatarUrl}
+            userId={userId}
+            onLinkClick={closeMobileMenu}
+          />
+        </SheetContent>
+      </Sheet>
+    </>
   );
 };
