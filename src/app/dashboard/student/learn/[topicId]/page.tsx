@@ -1,5 +1,4 @@
 // src/app/dashboard/student/learn/[topicId]/page.tsx
-import { generateStudentLesson } from "../actions";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,13 +16,32 @@ export default async function LearningModulePage({
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Fetch lesson and check if it's already completed in parallel
-  const [lessonResult, completionResult] = await Promise.all([
-    generateStudentLesson(params.topicId),
-    user ? supabase.from('lesson_completions').select('id').eq('student_id', user.id).eq('topic_id', params.topicId).maybeSingle() : Promise.resolve({ data: null })
-  ]);
+  // Fetch lesson content from API
+  let lesson = null;
+  let error = null;
   
-  const { lesson, error } = lessonResult;
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/student/learn`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topic: params.topicId })
+    });
+    
+    const data = await response.json();
+    if (data.success) {
+      lesson = data.lesson;
+    } else {
+      error = data.error || 'Failed to load lesson';
+    }
+  } catch (err) {
+    error = 'Failed to load lesson';
+  }
+
+  // Check if lesson is completed
+  const completionResult = user ? 
+    await supabase.from('lesson_completions').select('id').eq('student_id', user.id).eq('topic_id', params.topicId).maybeSingle() : 
+    { data: null };
+  
   const isCompleted = !!completionResult?.data;
 
   if (error || !lesson) {

@@ -3,7 +3,6 @@
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Loader2 } from "lucide-react";
-import { markLessonAsComplete } from "@/app/dashboard/student/learn/actions";
 
 export const MarkCompleteButton = ({
   topicId,
@@ -17,11 +16,20 @@ export const MarkCompleteButton = ({
 
   const handleClick = () => {
     startTransition(async () => {
-      const result = await markLessonAsComplete(topicId);
-      if (result.success) {
-        setCompleted(true);
+      try {
+        const response = await fetch('/api/student/learn/complete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ topicId })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+          setCompleted(true);
+        }
+      } catch (error) {
+        console.error('Error marking lesson as complete:', error);
       }
-      // Optionally handle result.error with a toast notification
     });
   };
 
