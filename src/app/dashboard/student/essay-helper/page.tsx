@@ -18,32 +18,36 @@ export default async function EssayListPage() {
     .order("updated_at", { ascending: false });
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-brand-blue">My Essays</h1>
-          <p className="text-slate-600">
+    <div className="container mx-auto px-4 py-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
+        <div className="flex-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-brand-blue">My Essays</h1>
+          <p className="text-slate-600 text-sm sm:text-base">
             Your personal workspace for drafting and refining your writing.
           </p>
         </div>
-        {/* The shameful placeholder is GONE, replaced by the complete component */}
-        <CreateEssayDialog />
+        <div className="flex-shrink-0">
+          <CreateEssayDialog />
+        </div>
       </div>
 
       {essays && essays.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {essays.map((essay) => (
             <Link
               key={essay.id}
               href={`/dashboard/student/essay-helper/${essay.id}`}
+              className="block"
             >
-              <Card className="hover:shadow-lg transition-shadow h-full">
-                <CardContent className="p-4">
-                  <h3 className="font-bold text-brand-blue truncate">
+              <Card className="hover:shadow-lg transition-shadow h-full cursor-pointer group">
+                <CardContent className="p-4 h-full flex flex-col">
+                  <h3 className="font-bold text-brand-blue text-sm sm:text-base line-clamp-2 group-hover:text-brand-blue/80 transition-colors">
                     {essay.title}
                   </h3>
-                  <p className="text-sm text-slate-500">Topic: {essay.topic}</p>
-                  <p className="text-xs text-slate-400 mt-2">
+                  <p className="text-xs sm:text-sm text-slate-500 mt-1 line-clamp-1">
+                    Topic: {essay.topic}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-auto pt-2">
                     Last updated:{" "}
                     {new Date(essay.updated_at).toLocaleDateString()}
                   </p>
@@ -53,9 +57,9 @@ export default async function EssayListPage() {
           ))}
         </div>
       ) : (
-        <div className="text-center py-20 border-2 border-dashed rounded-lg">
-          <p className="text-slate-500">You haven't created any essays yet.</p>
-          <p className="text-slate-500 mt-1">
+        <div className="text-center py-12 sm:py-20 border-2 border-dashed rounded-lg">
+          <p className="text-slate-500 text-sm sm:text-base">You haven't created any essays yet.</p>
+          <p className="text-slate-500 mt-1 text-sm sm:text-base">
             Click "Create New Essay" to get started.
           </p>
         </div>

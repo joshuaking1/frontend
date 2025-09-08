@@ -25,15 +25,19 @@ function SubmitButton() {
     <Button
       type="submit"
       disabled={pending}
-      className="bg-brand-blue hover:bg-brand-blue/90"
+      className="bg-brand-blue hover:bg-brand-blue/90 w-full sm:w-auto"
     >
       {pending ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Creating...
+          <span className="hidden sm:inline">Creating...</span>
+          <span className="sm:hidden">Creating...</span>
         </>
       ) : (
-        "Create Essay and Start Writing"
+        <>
+          <span className="hidden sm:inline">Create Essay and Start Writing</span>
+          <span className="sm:hidden">Create Essay</span>
+        </>
       )}
     </Button>
   );
@@ -50,36 +54,38 @@ export const CreateEssayDialog = () => {
           <PlusCircle className="mr-2 h-4 w-4" /> Create New Essay
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md mx-4 sm:mx-auto">
         <DialogHeader>
-          <DialogTitle>Start a New Essay</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-lg sm:text-xl">Start a New Essay</DialogTitle>
+          <DialogDescription className="text-sm sm:text-base">
             Give your essay a title and a topic. The topic will help the AI
             provide relevant curriculum-aligned feedback.
           </DialogDescription>
         </DialogHeader>
         <form action={createNewEssay} className="space-y-4 pt-4">
-          <div>
-            <Label htmlFor="title">Essay Title</Label>
+          <div className="space-y-2">
+            <Label htmlFor="title" className="text-sm font-medium">Essay Title</Label>
             <Input
               id="title"
               name="title"
               placeholder="e.g., The Impact of Cocoa Farming on Ghana's Economy"
+              className="w-full"
               required
             />
           </div>
-          <div>
-            <Label htmlFor="topic">Main Topic or Subject</Label>
+          <div className="space-y-2">
+            <Label htmlFor="topic" className="text-sm font-medium">Main Topic or Subject</Label>
             <Input
               id="topic"
               name="topic"
               placeholder="e.g., Ghanaian Agriculture"
+              className="w-full"
               required
             />
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-0 sm:justify-end pt-4">
             <DialogClose asChild>
-              <Button type="button" variant="secondary">
+              <Button type="button" variant="secondary" className="w-full sm:w-auto">
                 Cancel
               </Button>
             </DialogClose>
