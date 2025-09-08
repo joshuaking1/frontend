@@ -20,6 +20,7 @@ import {
 import { signOut } from "@/app/auth/actions";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { trackEvent } from '@/lib/posthog';
 
 const navLinks = [
   { href: "/dashboard/teacher", icon: LayoutDashboard, label: "Dashboard" },
@@ -72,7 +73,17 @@ const SidebarContent = ({ onLinkClick }: { onLinkClick?: () => void }) => {
         <ul className="space-y-1 lg:space-y-2">
           {navLinks.map((link) => (
             <li key={link.href}>
-              <Link href={link.href} onClick={onLinkClick}>
+              <Link 
+                href={link.href} 
+                onClick={() => {
+                  onLinkClick?.();
+                  trackEvent('teacher_navigation_clicked', {
+                    page: link.label,
+                    href: link.href,
+                    timestamp: new Date().toISOString()
+                  });
+                }}
+              >
                 <div
                   className={`flex items-center space-x-3 p-2 lg:p-3 rounded-lg cursor-pointer transition-colors ${
                     pathname === link.href
@@ -97,7 +108,12 @@ const SidebarContent = ({ onLinkClick }: { onLinkClick?: () => void }) => {
           <button
             type="submit"
             className="w-full flex items-center space-x-3 p-2 lg:p-3 rounded-lg text-left hover:bg-white/10 transition-colors text-slate-200 hover:text-white"
-            onClick={onLinkClick}
+            onClick={() => {
+              onLinkClick?.();
+              trackEvent('teacher_sign_out_clicked', {
+                timestamp: new Date().toISOString()
+              });
+            }}
           >
             <LogOut className="h-4 w-4 lg:h-5 lg:w-5 flex-shrink-0" />
             <span className="text-sm lg:text-base font-medium">Sign Out</span>

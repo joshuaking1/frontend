@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { trackEvent } from '@/lib/posthog';
 
 const formSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }),
@@ -36,6 +37,14 @@ export const AuthForm = () => {
   const handleSignUp = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
     setError(null);
+    
+    // Track sign up attempt
+    trackEvent('sign_up_attempted', {
+      role: values.role,
+      email_domain: values.email.split('@')[1],
+      timestamp: new Date().toISOString()
+    });
+    
     const supabase = createClient();
     const { error } = await supabase.auth.signUp({
       email: values.email,
@@ -51,7 +60,22 @@ export const AuthForm = () => {
     if (error) {
       setError(error.message);
       setIsSubmitting(false);
+      
+      // Track sign up failure
+      trackEvent('sign_up_failed', {
+        role: values.role,
+        error_message: error.message,
+        email_domain: values.email.split('@')[1],
+        timestamp: new Date().toISOString()
+      });
     } else {
+      // Track successful sign up
+      trackEvent('sign_up_successful', {
+        role: values.role,
+        email_domain: values.email.split('@')[1],
+        timestamp: new Date().toISOString()
+      });
+      
       // Supabase sends a confirmation email.
       // We will later build a page to notify the user to check their email.
       // For local dev, Supabase logs a confirmation link in the Docker logs.

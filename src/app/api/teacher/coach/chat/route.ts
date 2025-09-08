@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { Groq } from 'groq-sdk';
+import { trackServerEvent } from '@/lib/posthog-server';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
@@ -21,6 +22,15 @@ export async function POST(request: NextRequest) {
     if (!message) {
       return NextResponse.json({ error: 'Message is required' }, { status: 400 });
     }
+
+    // Track teacher chat request
+    trackServerEvent(user.id, 'teacher_chat_requested', {
+      message_length: message.length,
+      lesson_topic: lessonTopic || 'general',
+      conversation_history_length: conversationHistory?.length || 0,
+      user_agent: request.headers.get('user-agent'),
+      timestamp: new Date().toISOString()
+    });
 
     // Get curriculum context if lesson topic is provided
     let curriculumContext = "";
@@ -84,6 +94,12 @@ Respond in a conversational, supportive tone as if you're a knowledgeable collea
     const aiResponse = response.choices[0].message.content;
     
     if (!aiResponse) {
+      trackServerEvent(user.id, 'teacher_chat_failed', {
+        error: 'ai_response_failed',
+        message_length: message.length,
+        lesson_topic: lessonTopic || 'general',
+        timestamp: new Date().toISOString()
+      });
       throw new Error("AI response failed");
     }
 
@@ -105,6 +121,16 @@ Respond in a conversational, supportive tone as if you're a knowledgeable collea
       }
     });
 
+    // Track successful chat response
+    trackServerEvent(user.id, 'teacher_chat_successful', {
+      message_length: message.length,
+      response_length: aiResponse.length,
+      lesson_topic: lessonTopic || 'general',
+      suggestions_count: suggestions.length,
+      resources_count: resources.length,
+      timestamp: new Date().toISOString()
+    });
+
     return NextResponse.json({
       response: aiResponse,
       suggestions,
@@ -113,6 +139,13 @@ Respond in a conversational, supportive tone as if you're a knowledgeable collea
     
   } catch (error) {
     console.error("Chat error:", error);
+    
+    // Track chat error
+    trackServerEvent(null, 'teacher_chat_error', {
+      error: error instanceof Error ? error.message : "Unknown error",
+      timestamp: new Date().toISOString()
+    });
+    
     return NextResponse.json({ 
       error: error instanceof Error ? error.message : "Chat failed" 
     }, { status: 500 });

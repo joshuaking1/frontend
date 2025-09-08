@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { Groq } from 'groq-sdk';
+import { trackServerEvent } from '@/lib/posthog-server';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
@@ -46,12 +47,27 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient();
     
+    // Get user for tracking
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    // Track learning request
+    trackServerEvent(user?.id, 'student_learning_requested', {
+      topic,
+      user_agent: request.headers.get('user-agent'),
+      timestamp: new Date().toISOString()
+    });
+    
     // --- RAG Step 1: Get Query Embedding using Supabase function ---
     const { data: embeddingResponse } = await supabase.functions.invoke('text-to-embedding', { 
       body: { text: topic } 
     });
 
     if (!embeddingResponse || !embeddingResponse.embedding) {
+      trackServerEvent(user?.id, 'student_learning_failed', {
+        topic,
+        error: 'embedding_generation_failed',
+        timestamp: new Date().toISOString()
+      });
       throw new Error("Embedding generation failed");
     }
 
@@ -95,10 +111,23 @@ export async function POST(request: NextRequest) {
     const lessonContent = response.choices[0].message.content;
     
     if (!lessonContent) {
+      trackServerEvent(user?.id, 'student_learning_failed', {
+        topic,
+        error: 'content_generation_failed',
+        timestamp: new Date().toISOString()
+      });
       throw new Error("Failed to generate learning content");
     }
 
     const parsedContent = JSON.parse(lessonContent);
+    
+    // Track successful learning generation
+    trackServerEvent(user?.id, 'student_learning_generated', {
+      topic,
+      content_length: lessonContent.length,
+      chunks_found: chunks?.length || 0,
+      timestamp: new Date().toISOString()
+    });
     
     return NextResponse.json({ 
       content: parsedContent, 
@@ -107,6 +136,13 @@ export async function POST(request: NextRequest) {
     
   } catch (error) {
     console.error("Error generating student learning content:", error);
+    
+    // Track error
+    trackServerEvent(null, 'student_learning_error', {
+      error: error instanceof Error ? error.message : "Unknown error",
+      timestamp: new Date().toISOString()
+    });
+    
     return NextResponse.json({ 
       content: null, 
       error: error instanceof Error ? error.message : "Failed to generate content" 

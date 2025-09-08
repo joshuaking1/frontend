@@ -29,6 +29,7 @@ import {
   Calendar,
   Clock
 } from "lucide-react";
+import { trackEvent } from '@/lib/posthog';
 
 interface StudentAssessment {
   id: string;
@@ -126,6 +127,12 @@ export const ProactiveAICoach = () => {
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
     
+    // Track search attempt
+    trackEvent('teacher_search_attempted', {
+      query: searchQuery,
+      timestamp: new Date().toISOString()
+    });
+    
     setIsSearching(true);
     try {
       // This would call the multi-modal search API
@@ -137,8 +144,22 @@ export const ProactiveAICoach = () => {
       
       const results = await response.json();
       setSearchResults(results);
+      
+      // Track successful search
+      trackEvent('teacher_search_successful', {
+        query: searchQuery,
+        results_count: results?.length || 0,
+        timestamp: new Date().toISOString()
+      });
     } catch (error) {
       console.error('Search error:', error);
+      
+      // Track search error
+      trackEvent('teacher_search_failed', {
+        query: searchQuery,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
+      });
     } finally {
       setIsSearching(false);
     }

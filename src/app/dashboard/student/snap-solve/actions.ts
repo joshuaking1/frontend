@@ -94,7 +94,7 @@ export async function getSocraticResponse(sessionId: string, history: { role: 'u
 
     try {
         const response = await groq.chat.completions.create({
-            model: 'llama3-8b-8192',
+            model: 'meta-llama/llama-4-scout-17b-16e-instruct',
             messages: [
                 { role: 'system', content: socraticTutorPrompt.replace('{originalProblem}', session.extracted_text) },
                 ...formattedHistory

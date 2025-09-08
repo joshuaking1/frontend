@@ -17,6 +17,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { trackEvent } from '@/lib/posthog';
 
 const formSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }),
@@ -36,6 +37,13 @@ export const SignInForm = () => {
   const handleSignIn = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
     setError(null);
+    
+    // Track sign in attempt
+    trackEvent('sign_in_attempted', {
+      email_domain: values.email.split('@')[1],
+      timestamp: new Date().toISOString()
+    });
+    
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithPassword({
       email: values.email,
@@ -45,7 +53,20 @@ export const SignInForm = () => {
     if (error) {
       setError(error.message);
       setIsSubmitting(false);
+      
+      // Track sign in failure
+      trackEvent('sign_in_failed', {
+        error_message: error.message,
+        email_domain: values.email.split('@')[1],
+        timestamp: new Date().toISOString()
+      });
     } else {
+      // Track successful sign in
+      trackEvent('sign_in_successful', {
+        email_domain: values.email.split('@')[1],
+        timestamp: new Date().toISOString()
+      });
+      
       // Successful sign-in will trigger the middleware to redirect the user
       // to the correct page (onboarding or dashboard).
       // We just need to refresh the page to trigger the middleware check.

@@ -41,7 +41,7 @@ export async function processTextForKnowledgeGraph(sourceText: string, sourceTyp
 
     try {
         const response = await groq.chat.completions.create({
-            model: 'llama3-8b-8192', // Smaller, faster model with higher token limit
+            model: 'meta-llama/llama-4-scout-17b-16e-instruct', // Smaller, faster model with higher token limit
             messages: [{ role: 'system', content: scribeSystemPrompt }, { role: 'user', content: userPrompt }],
             temperature: 0.3,
             response_format: { type: "json_object" },

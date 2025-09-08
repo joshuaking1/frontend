@@ -6,6 +6,10 @@ import { redirect } from "next/navigation";
 
 export async function signOut() {
   const supabase = await createClient();
+  
+  // Get user info before signing out for tracking
+  const { data: { user } } = await supabase.auth.getUser();
+  
   const { error } = await supabase.auth.signOut();
 
   if (error) {

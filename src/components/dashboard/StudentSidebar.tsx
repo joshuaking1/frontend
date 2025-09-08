@@ -30,6 +30,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { trackEvent } from '@/lib/posthog';
 
 // The new, 100x data structure for our navigation
 const navGroups = [
@@ -175,7 +176,18 @@ const SidebarContent = ({
                 <ul className="space-y-1 pl-2">
                   {group.items.map((item) => (
                     <li key={item.href}>
-                      <Link href={item.href} onClick={onLinkClick}>
+                      <Link 
+                        href={item.href} 
+                        onClick={() => {
+                          onLinkClick?.();
+                          trackEvent('student_navigation_clicked', {
+                            section: group.title,
+                            page: item.label,
+                            href: item.href,
+                            timestamp: new Date().toISOString()
+                          });
+                        }}
+                      >
                         <div
                           className={`flex items-center space-x-3 p-2 rounded-md cursor-pointer transition-colors font-semibold ${
                             pathname.startsWith(item.href)
@@ -202,7 +214,12 @@ const SidebarContent = ({
           <button
             type="submit"
             className="w-full flex items-center space-x-3 p-3 rounded-lg text-left text-slate-600 hover:bg-slate-100 transition-colors font-semibold"
-            onClick={onLinkClick}
+            onClick={() => {
+              onLinkClick?.();
+              trackEvent('student_sign_out_clicked', {
+                timestamp: new Date().toISOString()
+              });
+            }}
           >
             <LogOut className="h-5 w-5" />
             <span>Sign Out</span>
