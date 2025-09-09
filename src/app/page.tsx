@@ -11,7 +11,10 @@ import { Testimonials } from "@/components/landing/Testimonials";
 import { Pricing } from "@/components/landing/Pricing";
 import { FinalCTA } from "@/components/landing/FinalCTA";
 import { Footer } from "@/components/landing/Footer";
-import { AnimatedSection } from "@/components/landing/AnimatedSection"; // Import new
+import { AnimatedSection } from "@/components/landing/AnimatedSection";
+
+export const dynamic = "force-static";
+export const revalidate = 86400;
 
 export default function Home() {
   return (

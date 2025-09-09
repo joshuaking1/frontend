@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { PlusCircle, MessageSquare, Mic, Send, User, Bot, Loader2 } from 'lucide-react';
 import { createNewChatSession, getOdenehoChatResponse } from '@/app/dashboard/student/chat/actions';
-import ReactMarkdown from 'react-markdown';
+import dynamic from 'next/dynamic';
+const ReactMarkdown = dynamic(() => import('react-markdown'), { ssr: false });
 
 // Types for Session and Message
 interface Session {
