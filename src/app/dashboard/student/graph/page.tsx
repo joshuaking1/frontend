@@ -1,7 +1,10 @@
 // frontend/src/app/dashboard/student/graph/page.tsx
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { KnowledgeGraphClient } from "@/components/student/KnowledgeGraphClient";
+import dynamic from "next/dynamic";
+const KnowledgeGraphClient = dynamic(
+  () => import("@/components/student/KnowledgeGraphClient").then(m => m.KnowledgeGraphClient)
+);
 
 export default async function KnowledgeGraphPage() {
     const supabase = await createClient();

@@ -5,12 +5,14 @@ import { PostHogProvider } from "@/components/providers/PostHogProvider";
 
 const inter = Inter({
   subsets: ["latin"],
+  display: 'swap',
   variable: "--font-inter",
 });
 
 const dmSerifDisplay = DM_Serif_Display({
   subsets: ["latin"],
   weight: "400",
+  display: 'swap',
   variable: "--font-dm-serif",
 });
 

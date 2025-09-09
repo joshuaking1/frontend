@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Send, Bot, User, Loader2, CheckCircle } from "lucide-react";
-import ReactMarkdown from 'react-markdown';
+import dynamic from 'next/dynamic';
+const ReactMarkdown = dynamic(() => import('react-markdown'), { ssr: false });
 import { getSocraticResponse, completeAndSummarizeSession } from '@/app/dashboard/student/snap-solve/actions';
 import { createClient } from '@/lib/supabase/client';
 
@@ -51,7 +52,7 @@ export const ChatInterface = ({ session, initialMessages }: { session: Session, 
 
         // 3. Call the server action and get the AI response back
         startAiResponseTransition(async () => {
-            const historyForAI = newHistory.map(m => ({ role: m.sender === 'ai' ? 'assistant' : 'user', content: m.content }));
+            const historyForAI = newHistory.map(m => ({ role: (m.sender === 'ai' ? 'assistant' : 'user') as 'assistant' | 'user', content: m.content }));
             const result = await getSocraticResponse(session.id, historyForAI);
 
             if (result.newAiMessage) {
