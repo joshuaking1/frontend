@@ -223,8 +223,13 @@ async function analyzePerformance(assessments: any[], supabase: any): Promise<Pr
     return insights;
   }
   
-  // Calculate average performance
-  const avgScore = assessments.reduce((sum, a) => sum + (a.score / a.total_questions * 100), 0) / assessments.length;
+  // Calculate average performance safely (avoid division by zero and NaN)
+  const validScores = assessments
+    .map(a => ({ score: Number(a.score), total: Number(a.total_questions) }))
+    .filter(a => Number.isFinite(a.score) && Number.isFinite(a.total) && a.total > 0)
+  const avgScore = validScores.length > 0
+    ? validScores.reduce((sum, a) => sum + (a.score / a.total * 100), 0) / validScores.length
+    : 0
   
   // Low performance alert
   if (avgScore < 60) {
@@ -245,11 +250,20 @@ async function analyzePerformance(assessments: any[], supabase: any): Promise<Pr
 
   // Performance improvement
   if (assessments.length >= 2) {
-    const recent = assessments.slice(0, Math.ceil(assessments.length / 2));
-    const older = assessments.slice(Math.ceil(assessments.length / 2));
-    
-    const recentAvg = recent.reduce((sum, a) => sum + (a.score / a.total_questions * 100), 0) / recent.length;
-    const olderAvg = older.reduce((sum, a) => sum + (a.score / a.total_questions * 100), 0) / older.length;
+    const midpoint = Math.ceil(assessments.length / 2)
+    const recent = assessments.slice(0, midpoint)
+    const older = assessments.slice(midpoint)
+
+    const safeAvg = (arr: any[]) => {
+      const vals = arr
+        .map(a => ({ score: Number(a.score), total: Number(a.total_questions) }))
+        .filter(a => Number.isFinite(a.score) && Number.isFinite(a.total) && a.total > 0)
+      return vals.length > 0
+        ? vals.reduce((sum, a) => sum + (a.score / a.total * 100), 0) / vals.length
+        : 0
+    }
+    const recentAvg = safeAvg(recent)
+    const olderAvg = safeAvg(older)
     
     if (recentAvg > olderAvg + 10) {
       insights.push({

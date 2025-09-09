@@ -7,7 +7,7 @@ export const initPostHog = () => {
       person_profiles: 'identified_only',
       capture_pageview: false, // We'll handle this manually
       capture_pageleave: true,
-      loaded: (posthog) => {
+      loaded: () => {
         if (process.env.NODE_ENV === 'development') console.log('PostHog loaded')
       }
     })
@@ -37,7 +37,16 @@ export const trackPageView = (pageName: string, properties?: Record<string, any>
 
 export const setUserProperties = (properties: Record<string, any>) => {
   if (typeof window !== 'undefined') {
-    posthog.people.set(properties)
+    // Prefer the modern PostHog API; fall back to identify with current distinct id
+    const anyPosthog = posthog as unknown as { setPersonProperties?: (props: Record<string, any>) => void }
+    if (typeof anyPosthog.setPersonProperties === 'function') {
+      anyPosthog.setPersonProperties(properties)
+    } else {
+      const currentId = posthog.get_distinct_id()
+      if (currentId) {
+        posthog.identify(currentId, properties)
+      }
+    }
   }
 }
 

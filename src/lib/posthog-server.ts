@@ -4,9 +4,13 @@ import { PostHog } from 'posthog-node'
 let posthog: PostHog | null = null
 
 export const initServerPostHog = () => {
-  if (!posthog && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
-    posthog = new PostHog(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
-      host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://app.posthog.com',
+  // Use server-side secret key, never the NEXT_PUBLIC key
+  const serverKey = process.env.POSTHOG_API_KEY || process.env.POSTHOG_KEY
+  const serverHost = process.env.POSTHOG_HOST || process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://app.posthog.com'
+
+  if (!posthog && serverKey) {
+    posthog = new PostHog(serverKey, {
+      host: serverHost,
     })
   }
   return posthog
