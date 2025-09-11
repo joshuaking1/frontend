@@ -70,9 +70,15 @@ export async function middleware(request: NextRequest) {
 
     const { data: profile } = await supabase.from('profiles').select('onboarding_complete, role').eq('id', user.id).single();
 
+    // If profile doesn't exist yet (e.g., just confirmed email and trigger hasn't run),
+    // send the user to the correct onboarding flow instead of signing them out.
     if (!profile) {
-        await supabase.auth.signOut();
-        return NextResponse.redirect(new URL('/auth/sign-in', request.url));
+        const roleFromMetadata = (user.user_metadata as any)?.role ?? 'student';
+        const onboardingUrl = `/onboarding/${roleFromMetadata}`;
+        if (pathname !== onboardingUrl) {
+            return NextResponse.redirect(new URL(onboardingUrl, request.url));
+        }
+        return response;
     }
     
     // Handle onboarding redirection

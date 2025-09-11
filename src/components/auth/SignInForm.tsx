@@ -67,10 +67,9 @@ export const SignInForm = () => {
         timestamp: new Date().toISOString()
       });
       
-      // Successful sign-in will trigger the middleware to redirect the user
-      // to the correct page (onboarding or dashboard).
-      // We just need to refresh the page to trigger the middleware check.
-      router.refresh();
+      // After sign-in, send users away from the auth page to let middleware route them.
+      // Using push avoids being stuck on the same route while cookies update.
+      router.push('/dashboard');
     }
   };
 
